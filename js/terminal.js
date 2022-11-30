@@ -374,7 +374,7 @@ class TerminalEmulator{
     if(potentialCmds.length === 1){
       this.cmdLine_.value = potentialCmds[0]
     }else{
-      this.output(`Commands: ${potentialCmds.join(" ")}`)
+      this.output(`${potentialCmds.join(" ")}`)
     }
   }
 
