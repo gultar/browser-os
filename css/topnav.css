@@ -108,6 +108,14 @@ li > a:only-child:after { content: ''; }
 	nav ul li{
 		padding:2px;
 	}
+	
+	nav ul ul {
+		position: relative;
+		top:0pt; 
+		left:0pt;
+		font-size:6pt;
+		width:20vh;
+	}
 
 	nav ul ul ul li {
 		position: relative;
