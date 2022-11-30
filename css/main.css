@@ -1,278 +1,143 @@
-  body{
+@import url(https://fonts.googleapis.com/css?family=Open+Sans);
+@import url(https://fonts.googleapis.com/css?family=Bree+Serif);
+
+*{
+	--height:30px;
+	--height-minus:-30px;
+	--width:170px;
+	--hover-color:#57ff0a;
+	--nav-background-color:black;
+	--nav-font-color:#ffffff;
+	--nav-font-size:8pt;
+}
+
+.clock-container{
+	display:inline-block;
+	margin-right: 0;
+	margin-left: auto;
+	align-items: center;
+	padding: 8px 8px;
+	font-size: var(--nav-font-size);
+}
+
+.nav-item-group{
+	display:flex;
+}
+
+nav {
+	background-color: var(--nav-background-color);
+    top:0;
+    left:0;
     position:fixed;
-    color:white;
-    background:#404347;
-    background-size:cover;
-    background-repeat: no-repeat;
-    background-position:left left;
-    z-index:1;
-    margin:0;
-    height:100%;
     width:100%;
-    font-family: Inconsolata, monospace;
-    
-  }
+	display:flex;
+	justify-content: space-between;
+	box-shadow: 0 10px 10px -10px rgba(0,0,0,.5);
+}
 
-  .background {
-      
-    display
-    :
-     block
-    ;
-      
-    top
-    : 0;
-      
-    left
-    : 0;
-      
-    z-index
-    : 0;
-    }
-  
-  @keyframes gradient {
-    0% {
-      background-position: 0% 50%;
-    }
-    50% {
-      background-position: 100% 50%;
-    }
-    100% {
-      background-position: 0% 50%;
-    }
-  }
-
-  *{
-    --window-height: 300px;
-    --window-width: 500px;
-    --window-tint: 0.5;
-    --terminal-font-color:#57ff0a;
-    --console-window-background:rgba(0,0,0,var(--window-tint));
-    --terminal-font-size:8pt;
-    --background:#45505f;
-    --winbox-background:transparent
-  }
-
-  #page-wrapper{
-    height:100%;
-    width:100%;
-    background: linear-gradient(-45deg, #2c4f99, #365afc, #414141, #575757);
-    background-size: 400% 400%;
-    animation: gradient 180s ease infinite;
-  }
-
-  .terminal-window{
+nav ul {
+	padding: 0;
     margin: 0;
-    font-size: var(--terminal-font-size);
-    
-    color: var(--terminal-font-color);
-    overflow:auto;
-    display:block; 
-    position:absolute; 
-    z-index:9;
-  }
+	list-style: none;
+	position: relative;
+}
+	
+nav ul li {
+	display:inline-block;
+	background-color: var(--nav-background-color);
+}
 
-  p{
-    margin-block-start: 0 !important;
-    margin-block-end: 0 !important;
-  }
+nav a {
+	display:block;
+	padding:0 10px;	
+	color:var(--nav-font-color);
+	line-height: var(--height);
+	text-decoration:none;
+    font-size: var(--nav-font-size);
+}
 
-  .terminal-display{
-    height:88%;
-    overflow:auto;
-  }
+nav a:hover { 
+	background-color: var(--hover-color); 
+}
 
-  .wb-header{
-    background: var(--console-window-background) !important;
-  }
-  .wb-title{
-    font-size: 9pt;
-  }
-  .winbox{
-    background-color:var(--winbox-background) !important;
-  }
-  .wb-body{
-    background: var(--console-window-background) !important;
-  }
+/* Hide Dropdowns by Default */
+nav ul ul {
+	display: none;
+	position: absolute; 
+	top: var(--height); /* the height of the main nav */
+}
+	
+/* Display Dropdowns on Hover */
+nav ul li:hover > ul {
+	display:inherit;
+}
+	
+/* Fisrt Tier Dropdown */
+nav ul ul li {
+	width:var(--width);
+	float:none;
+	display:list-item;
+	position: relative;
+}
 
-  ::selection {
-    background: #1e65fd;
-    color:white;
-  }
-  
-  .container {
-    padding: 0em 1em 1em 1em;
-    height:90%;
-    width:90%;
-  }
-  .output {
-    clear: both;
-    width: 100%;
-  }
-  .output h3 {
-    margin: 0;
-  }
-  .output pre {
-    margin: 0;
-  }
-  
-  .input-line {
-    display: -webkit-box;
-    -webkit-box-orient: horizontal;
-    -webkit-box-align: stretch;
-    display: -moz-box;
-    -moz-box-orient: horizontal;
-    -moz-box-align: stretch;
-    display: box;
-    box-orient: horizontal;
-    box-align: stretch;
-    clear: both;
-  }
-  .input-line > div:nth-child(2) {
-    -webkit-box-flex: 1;
-    -moz-box-flex: 1;
-    box-flex: 1;
-  }
-  
-  .prompt {
-    white-space: nowrap;
-    color: #96b38a;
-    margin-right: 7px;
-    display: -webkit-box;
-    -webkit-box-pack: center;
-    -webkit-box-orient: vertical;
-    display: -moz-box;
-    -moz-box-pack: center;
-    -moz-box-orient: vertical;
-    display: box;
-    box-pack: center;
-    box-orient: vertical;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    user-select: none;
-  }
-  .cmdline {
-    outline: none;
-    background-color: transparent;
-    margin: 0;
-    width: 100%;
-    font: inherit;
-    border: none;
-    color: inherit;
-  }
-  .ls-files p span{
-    line-height:20px;
-  }
-  .help-line{
-    line-height:10px !important;
-  }
-  .help-cmd{
-    text-decoration: underline;
-  }
-  
-  .terminal-window:before {
-    content: "";
-    position: absolute;
-    top: 30px;
-    bottom: 30px;
-    left: 30px;   
-    right: 30px;
-    z-index: 1;
-    border-radius: 6px;
-    width:90%;
-  }
-  
-  ::-webkit-scrollbar {
-      width: 12px;
-  }
-  
-  ::-webkit-scrollbar-track {
-      -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
-      border-radius: 10px;
-  }
-  
-  ::-webkit-scrollbar-thumb {
-      border-radius: 10px;
-      background-color:#404347;
-      -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.5);
-  }
-  ::-webkit-scrollbar-corner {
-    background: rgba(0,0,0,0);
-  }
+/* Second, Third and more Tiers	*/
+nav ul ul ul li {
+	position: relative;
+	top:var(--height-minus); 
+	left:var(--width);
+}
 
-  .desktop-anchor{
-    display:block;
-    height:100vh;
-    width:100vh;
-    margin-top:5vh;
-    /* z-index: 7; */
-  }
+	
+/* Change this in order to change the Dropdown symbol */
+li > a:after { content:  ' +'; }
+li > a:only-child:after { content: ''; }
 
-  .desktop-icon{
-    display:block;
-    margin:10px;
 
-  }
+.main-menu-icons{
+	height:18px;
+	width:18px;
+	margin-right: 3px;
+	vertical-align: middle;
+}
 
-  .desktop-icon:hover{
-    cursor: pointer;
-  }
+@media screen and (min-width : 320px) and (max-width : 500px) {
+	*{
+		--height: 20px;
+	}
 
-  .desktop-anchor{
-    /* padding-top:5vh; */
-  }
+	nav ul li{
+		padding:2px;
+	}
 
-  .desktop-row{
-    display:flex;
-    justify-content: space-evenly;
-  }
+	nav ul ul ul li {
+		position: relative;
+		top:0pt; 
+		left:0pt;
+		font-size:6pt;
+	}
+}
 
-  .desktop-slot{
-    height:12vh;
-    width:16vh;
-    margin: 1.3vh 2vh;
-    background-color:aquamarine;
-  }
-  
-  #main-container{
-    /* margin-top:40px; */
-  }
+@media screen and (max-width : 320px) {
+	*{
+		--height: 20px;
+	}
 
-  @media screen and (min-width : 320px) and (max-width : 500px) {
-    body{
-      font-size:12pt !important;
-      background-size:100% 100%;
-      background-repeat: no-repeat;
-    }
+	nav ul li{
+		padding:2px;
+	}
+	
+	nav ul ul {
+		position: relative;
+		top:0pt; 
+		left:0pt;
+		font-size:6pt;
+		width:20vh;
+	}
 
-    .winbox{
-      max-width:100%;
-    }
-  }
-  
-  @media only screen and (max-device-width: 480px), only screen and (min-device-width: 560px) and (max-device-width: 1136px) and (-webkit-min-device-pixel-ratio: 2) {
-    /* .panel{
-      top: 0px;
-      left: 12px;
-      right: 12px;
-      width:95%;
-      height:50%;
-      font-size:12px !important;
-      margin-top:2%;
-    }
-   */
-    /* .console-panel{
-      margin-top:92%;
-      width:95%;
-      height:32%;
-      margin-left:2%;
-      margin-right:5%;
-      font-size:12px !important;
-    } */
-  
-  }
-  
-  @media only screen and (max-width : 320px) {
-  
-  }
-  
+	nav ul ul ul li {
+		position: relative;
+		top:0pt; 
+		left:0pt;
+		font-size:6pt;
+	}
+}
