@@ -101,8 +101,8 @@ li > a:only-child:after { content: ''; }
 }
 
 @media screen and (min-width : 320px) and (max-width : 500px) {
-	*{
-		--height: 20px;
+	nav a {
+		line-height: 20px;
 	}
 
 	nav ul li{
@@ -126,12 +126,10 @@ li > a:only-child:after { content: ''; }
 }
 
 @media screen and (max-width : 320px) {
-	*{
-		--height: 20px;
-	}
 
 	nav ul li{
 		padding:2px;
+		height:20px;
 	}
 	
 	nav ul ul {
