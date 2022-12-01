@@ -5,6 +5,7 @@ function turnToURLQueryText(args){
 }
 
 function runWeb(url){
+    
     if(url == "" && url.length == 0){
         url = "https://www.google.com/webhp?igu=1"
     }
