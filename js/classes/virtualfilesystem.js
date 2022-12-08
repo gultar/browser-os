@@ -156,6 +156,17 @@ class Directory{
         return false
     }
 
+    setFile(filename, newFile){
+        for(const file of this.contents){
+            if(file && file.name == filename){
+                file.content = newFile.content
+                return true
+            }
+        }
+
+        return false
+    }
+
     get(name){
         const isDirectory = this.hasDir(name)
         if(isDirectory) return this[name]
@@ -224,6 +235,8 @@ class VirtualFileSystem{
             cp:this.cp,
             mv:this.mv,
             autoCompletePath:this.autoCompletePath,
+            getFile:this.getFile,
+            editFile:this.editFile,
         }
     }
 
@@ -307,13 +320,13 @@ class VirtualFileSystem{
         const pathArray = this.fromPathToArray(path)
         const dirname = pathArray[pathArray.length - 1]
         const isWithinThisDir = pathArray.length == 1
-// debugger
+        
         const exists = this.workingDir.hasDir(dirname)
         if(exists) throw new Error(`mkdir: directory ${dirname} already exists`)
 
         if(isWithinThisDir){
             this.workingDir[dirname] = {}//new Directory(dirname, this.workingDir)
-// debugger
+
         }else{
             pathArray.pop()
             const pathToFile = this.fromArrayToPath(pathArray) 
@@ -498,6 +511,16 @@ class VirtualFileSystem{
         }else{
             return false
         }
+    }
+
+    getFile(filename){
+        return this.workingDir.getFile(filename)
+    }
+
+    editFile(filename, newContent){
+        const file = this.getFile(filename)
+        file.content = newContent
+        this.workingDir.setFile(filename, file)
     }
 
     walkBackToRootDir(currentDir, pathToRoot=[]){

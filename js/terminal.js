@@ -67,7 +67,7 @@ class TerminalEmulator{
       //Web Tools
       web:(args)=>runWeb(args),
       wiki:()=>runWeb(["https://wikipedia.org"]),
-      gdt:()=>runWeb(["https://gdt.oqlf.gouv.qc.ca/Resultat.aspx"]),
+      gdt:()=>runWeb(["https://gdt.oqlf.gouv.qc.ca/"]),
       iching:()=>runWeb(["https://gultar.github.io/iching/"]),//
       georatio:()=>runWeb(["https://georatio.com/"]),
       linguee:(args)=>runLinguee(args),
@@ -77,6 +77,7 @@ class TerminalEmulator{
       lofi:()=>runLofi(),
       webamp:()=>runWebamp(),
       editor:()=>runEditor(),
+      weather:async()=>await this.getWeather()
     }
   }
   
@@ -198,6 +199,12 @@ class TerminalEmulator{
 
   runTest(){
     makeFileExplorer()
+  }
+
+  async getWeather(){
+      const currentWeather = await getCurrentWeather()
+      
+      this.output(`<xmp>${JSON.stringify(currentWeather, null, 2)}</xmp>`)
   }
 
   async processCommand(commandLine){

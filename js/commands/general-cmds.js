@@ -10,8 +10,3 @@ function changeBackground(args){
     }
 }
 
-const saveState = () =>{
-  const exported = FileSystem.export()
-  
-  return localStorage.setItem("temp-fs", exported)
-}
