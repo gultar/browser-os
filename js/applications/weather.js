@@ -16,8 +16,7 @@ const getLocalCoordinates = async () =>{
    const result = await $.getJSON('https://ip-api.io/json/')
    if(!result) return false
 
-   const { latitude, longitude } = result
-   return { latitude, longitude }
+   return result
 }
 
 const convertWeatherCode = (code) =>{
@@ -57,13 +56,16 @@ const convertWeatherCode = (code) =>{
 }
 
 const getCurrentWeather = async () =>{
-    const { latitude, longitude } = await getLocalCoordinates()
+    const { latitude, longitude, city, country_name } = await getLocalCoordinates()
     //// https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}
     const result = await $.get(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true&timezone=auto&daily=weathercode,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,precipitation_hours`)
     const { daily, current_weather } = result
     const weatherStage = daily.weathercode.map(code => convertWeatherCode(code))
+    console.log(city, country_name)
     return {
         ...current_weather,
-        weather:weatherStage
+        weather:weatherStage,
+        city,
+        country_name,
     }
 }

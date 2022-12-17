@@ -29,7 +29,9 @@ const initParticles = () =>{
                         }
                 }]
             });
+            
         };
 }
 
 initParticles()
+

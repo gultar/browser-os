@@ -24,29 +24,24 @@ const makeFileExplorer = () =>{
 </div>`
     const fileExplorer = new WinBox({ title: "File Explorer", height:"95%", width:"80%", html:explorerHTML  });
     // 
-    (async ()=>{
+    (()=>{
         let currentDirContents = []
 
        const refreshExplorer = async () =>{
         let wd = await exec("pwd")
         setCurrentDirContents(wd)
        }
-      let currentDir = await exec("pwd")
-      let newDirectoryCounter = 0
-      let newFileCounter = 0
-      /**parent.changeContents('${element}') */
+      
       window.addEventListener("message", async (event) => {
         const message = event.data
         if(message.changeDir){
             const targetDir = message.changeDir
             const changed = await exec("cd", [targetDir])
-            // setCurrentDirContents(targetDir)
+            
         }else if(message.newDir){
-            createNewDirectory(message.newDir)
+            createNewDirectory()
         }else if(message.newFile){
-            newFileCounter++
-            const newFile = `Newfile${newFileCounter}`
-            const createdFile = await exec("touch", [newFile])
+            createNewFile()
         }else if(message.refreshExplorer){
             refreshExplorer()
         }else if(message.openFile){
@@ -59,7 +54,48 @@ const makeFileExplorer = () =>{
         
       }, false);
 
-      const createNewElement = (element, linebreak=false) =>{
+      let maxNewElementNumber = 500
+      const createNewDirectory = async (newDirNumber = 1) =>{
+        if(newDirNumber > maxNewElementNumber) throw new Error('Cannot create more new directories')
+        try{ 
+            const newDirname = `New_directory${newDirNumber}`
+            const hasDir = await exec("getDir", [newDirname])
+            
+            if(!hasDir){
+                const created = await exec('mkdir', [newDirname])
+                refreshExplorer()
+                newDirNumber = 0
+                return created
+            }else{
+                return await createNewDirectory(newDirNumber + 1)
+            }
+        }catch(e){
+            console.log(e)
+            return e
+        }
+      }
+
+      const createNewFile = async (newFileNumber = 1) =>{
+        if(newFileNumber > maxNewElementNumber) throw new Error('Cannot create more new files')
+        try{ 
+            const newFilename = `New_file${newFileNumber}`
+            const hasFile = await exec("getFile", [newFilename])
+            
+            if(!hasFile){
+                const created = await exec('touch', [newFilename])
+                refreshExplorer()
+                newFileNumber = 0
+                return created
+            }else{
+                return await createNewFile(newFileNumber + 1)
+            }
+        }catch(e){
+            console.log(e)
+            return e
+        }
+      }
+
+      const createNewElement = (element) =>{
         return `<div class="explorer-item-wrapper">  
         <a onclick="window.postMessage({ ${(
             element.includes("/") || element === ".." ? 
@@ -72,24 +108,11 @@ const makeFileExplorer = () =>{
         </div>`
       }
 
-      const createNewDirectory = () =>{
-        
-        for(var i=0; i< 500; i++){
-            try{
-                const newDirname = `Newdirectory${i}`
-                const createdDir = await exec("mkdir", [newDirname])
-            }catch(e){
-
-            }
-        }
-
-      }
-
       const setCurrentDirContents = async (path) =>{
         
         const explorerElement = document.getElementById("explorer")
         currentDirContents = await exec("ls",[])
-        
+        console.log(await exec("ls",["","full"]))
         let domToAdd = ""
         for await(const element of currentDirContents){
             domToAdd = domToAdd + createNewElement(element)

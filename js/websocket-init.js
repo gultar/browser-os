@@ -32,15 +32,21 @@ socket.on('error', (err)=>{
 })
 
 const execRemoteCommand = (cmd, args=[]) =>{
-  return new Promise((resolve, reject)=>{
+  return new Promise((resolve)=>{
     try{
-      const commandString = `${cmd} ${args.join(" ")}`
-      socket.once("shell-result", (result)=>{
-        resolve(result)
+      
+      socket.once("shell-result", (shellResult)=>{
+        if(shellResult.error){
+          resolve({ error:shellResult.error })
+        }
+        else{
+          const { result } = shellResult
+          resolve(result)
+        }
       })
-      socket.emit("shell-command", commandString)
+      socket.emit("shell-command", cmd, args)
     }catch(e){
-      reject(e)
+      resolve({ error:e })
     }
   })
 }

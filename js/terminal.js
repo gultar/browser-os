@@ -28,6 +28,7 @@ class TerminalEmulator{
         "mkdir":"Create the DIRECTORY, if it does not already exist. Usage: mkdir directoryname/",
         "touch":"Creates an empty file if it does not already exist. Usage: touch filename",
         "rmdir":"Remove the DIRECTORY, if it is empty. Usage: rmdir directoryname",
+        "whoami":"Displays information concerning host"
       },
       "settings":{
         "background":"Changes the background image. Usage: background http://url.url",
@@ -72,12 +73,14 @@ class TerminalEmulator{
       georatio:()=>runWeb(["https://georatio.com/"]),
       linguee:(args)=>runLinguee(args),
       tirex:()=>runTirex(),
-      test:()=>this.runTest(),
       map:()=>runMap(),
       lofi:()=>runLofi(),
       webamp:()=>runWebamp(),
-      editor:()=>runEditor(),
-      weather:async()=>await this.getWeather()
+      notepad:async (args)=>await this.runNotepad(args),
+      code:async (args)=>await this.runCodeEditor(args),
+      weather:async()=>await this.getWeather(),
+      whoami:()=>this.whoami(),
+      test:()=>this.testEditor(),
     }
   }
   
@@ -168,25 +171,20 @@ class TerminalEmulator{
     return result
   }
 
-  whereis(args){
-    exec("whereis", args)
-    .then(result => {
-      this.output(result)
-    })
+  async runNotepad(args){
+    const path = args[0]
+    const file = await exec("getFile", [path])
+    let content = ""
+    if(file){
+      content = file.content
+    }
+
+    launchNotepad(path, content, (file?"exists":false))
+    return true
   }
 
-  search(args){
-    exec("search", args)
-    .then(result => {
-      if(result){
-        if(result.directory){
-          this.output(FileSystem.getAbsolutePath(result.directory))
-        }else if(result.file){
-          const { file, containedIn } = result
-          this.output(FileSystem.getAbsolutePath(containedIn)+"/"+file.name)
-        }
-      }
-    })
+  testEditor(){
+    new WinBox({ title: "Window Title", url:'./js/applications/kitchen-sink.html' })
   }
 
   runFileManager(){
@@ -197,14 +195,14 @@ class TerminalEmulator{
     new WinBox({ title: "Window Title", mount:temp });
   }
 
-  runTest(){
-    makeFileExplorer()
-  }
-
   async getWeather(){
       const currentWeather = await getCurrentWeather()
       
       this.output(`<xmp>${JSON.stringify(currentWeather, null, 2)}</xmp>`)
+  }
+
+  whoami(){
+    this.output(navigator.userAgent)
   }
 
   async processCommand(commandLine){

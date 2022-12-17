@@ -43,8 +43,6 @@ function createTerminalWindow(){
         y:0,
         title: "", 
         mount: terminal,
-        height: "500px",
-        width: "700px",
         onclose:()=>{
             terminal.remove();
         }
