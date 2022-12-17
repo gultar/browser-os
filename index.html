@@ -20,19 +20,41 @@
     <script src="./js/terminal.js"></script>
     <script src="./js/terminal-window-init.js"></script>
     <script src="./js/applications/notepad.js"></script>
-    <script src="./js/applications/code-editor.js"></script>
+    <script src="./js/file-explorer/open-file.js"></script>
+    <script src="./js/file-explorer/view-image.js"></script>
     <script src="./js/file-explorer/explore.js"></script>
     <script src="./js/filesystem-init.js"></script>
     <script src="./js/websocket-init.js"></script>
     <script src="./js/applications/weather.js"></script>
     <script src="./js/external/particles.min.js"></script>
     <script src="./js/particlejs-init.js"></script>
-    
+    <script src="./init-script.js" defer></script>
+
     <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests" />
     <title>Document</title>
 </head>
 <body>
-    
+    <script>
+        const reboot = () =>{
+            const confirmed = confirm("Are you sure you want to reboot?")
+            if(confirmed){
+                location.reload()
+            }else{
+                return
+            }
+            
+        }
+
+        const shutdown = () =>{
+            const confirmed = confirm("Are you sure you want to shutdown?")
+            if(confirmed){
+                window.close()
+            }else{
+                return
+            }
+            
+        }
+    </script>
     <div id="page-wrapper" class="flex">
         
         <nav id="topnav" class=".topnav">
@@ -73,7 +95,12 @@
                                 </li>
                             </ul>
                             </li>
-                            
+                            <li><a href="#"><img class="main-menu-icons" src="./images/icons/system.png" />System</a>
+                                <ul>
+                                    <li><a onclick="reboot()">Reboot</a></li>
+                                    <li><a onclick="shutdown()">Shutdown</a></li>
+                                </ul>
+                            </li>
                         </ul>
                         </li>
                 </li>
@@ -88,9 +115,24 @@
         <div id="filemanager"></div>
         <div id="webamp"></div>
         <div id="main-container">
+            <div id="logo-container">
+                <img id="desktop-logo" src="./images/icons/desktop-logo-3.png" style="">
+            </div>
             <canvas class="background"></canvas>
         </div>
     </div>
+    <script type="text/javascript">
+        function disableF5(e) { if ((e.which || e.keyCode) == 116 || (e.which || e.keyCode) == 82) e.preventDefault(); };
+        
+        $(document).ready(function(){
+             $(document).on("keydown", (e)=>{
+                // console.log('Muppet')
+                // disableF5(e)
+             });
+        });
+    </script>
 
 </body>
+
+
 </html>

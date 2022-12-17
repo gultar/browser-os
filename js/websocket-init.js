@@ -1,35 +1,16 @@
-let socket = new io("http://localhost:8000")
-let connections = 0
-let connectionLimit = 5
-socket.on('connect', ()=>{
-    console.log('Shell linked established')
-})
+let serverAvailable = false
 
-socket.on('connect_error', ()=>{
-  console.log('connect attempt')
-  if(connections > connectionLimit){
-    socket.close()
-  }else{
-    connections++
-  }
-})
+const pingServer = () =>{
+   return new Promise((resolve)=>{
+      
+      setTimeout(()=>{
+        resolve(false)
+      }, 1000)
+      serverAvailable = $.get("/online")
+      resolve({ available:serverAvailable })
 
-socket.on('reconnection', ()=>{
-  reconnections = 0
-})
-
-socket.on('reconnect_attempt', ()=>{
-  console.log('reconnect attempt')
-  if(connections > connectionLimit){
-    socket.close()
-  }else{
-    connections++
-  }
-})
-
-socket.on('error', (err)=>{
-    console.log(err)
-})
+   })
+}
 
 const execRemoteCommand = (cmd, args=[]) =>{
   return new Promise((resolve)=>{
@@ -41,6 +22,7 @@ const execRemoteCommand = (cmd, args=[]) =>{
         }
         else{
           const { result } = shellResult
+          console.log('Exec cmd', cmd, result)
           resolve(result)
         }
       })
@@ -49,6 +31,18 @@ const execRemoteCommand = (cmd, args=[]) =>{
       resolve({ error:e })
     }
   })
+}
+
+const execServerCommand = async (cmd, args=[]) =>{
+  const {error, result} = await Promise.resolve($.post("http://localhost:8000/command", {
+      cmd:cmd,
+      args:args
+    })
+  );
+
+  if(error) return { error:error }
+
+  return result
 }
 
 const runFileSystemCommand = (cmd, args=[]) =>{
@@ -63,14 +57,14 @@ const runFileSystemCommand = (cmd, args=[]) =>{
 }
 
 const exec = async (cmd, args=[]) =>{
-  if(socket.connected){
-    return await execRemoteCommand(cmd, [...args])
+  
+  if(serverAvailable){
+    return await execServerCommand(cmd, [...args])//execRemoteCommand(cmd, [...args])
   }else{
     return runFileSystemCommand(cmd, [...args])
   }
 }
 
-
-
+pingServer()
 
 

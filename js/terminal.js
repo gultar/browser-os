@@ -63,9 +63,9 @@ class TerminalEmulator{
       rmdir:async(args)=>await this.runBash("rmdir",args),
       rm:async(args)=>await this.runBash("rm",args),
       whereis:async(args)=>await this.runBash("whereis", args),
-      //Style Settings
+      //Settings
       background:(args)=>changeBackground(args),
-      //Web Tools
+      //Applications
       web:(args)=>runWeb(args),
       wiki:()=>runWeb(["https://wikipedia.org"]),
       gdt:()=>runWeb(["https://gdt.oqlf.gouv.qc.ca/"]),
@@ -77,9 +77,10 @@ class TerminalEmulator{
       lofi:()=>runLofi(),
       webamp:()=>runWebamp(),
       notepad:async (args)=>await this.runNotepad(args),
+      editor:async (args)=>await this.runNotepad(args), //Alias
       weather:async()=>await this.getWeather(),
       whoami:()=>this.whoami(),
-      test:()=>this.testEditor(),
+      view:async (args)=>await this.viewImage(args)
     }
   }
   
@@ -182,6 +183,9 @@ class TerminalEmulator{
     return true
   }
 
+  async viewImage(args){
+    // new WinBox({ title:"Image Viewer", url: })
+  }
 
   runFileManager(){
     const anchor = document.getElementById("filemanager")

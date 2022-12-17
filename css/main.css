@@ -56,10 +56,22 @@
   #page-wrapper{
     height:100%;
     width:100%;
-    background: linear-gradient(-45deg, #2c4f99, #365afc, #414141, #575757);
+    background: linear-gradient(-90deg, #2c4f99, #365afc, #414141, #575757);
     background-size: 400% 400%;
-    animation: gradient 180s ease infinite;
+    /* animation: gradient 180s ease infinite; */
   }
+
+  #logo-container{
+    display:block;
+    padding:20px;
+    background: rgba(0, 0, 0, 0.6);
+    box-shadow: 0 0 0 5px rgb(45, 52, 63);
+    border-radius: 50%;
+    position:fixed;
+    top:40%;
+    left:44%;
+  }
+
 
   .terminal-window{
     margin: 0;
