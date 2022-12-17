@@ -61,7 +61,7 @@
     /* animation: gradient 180s ease infinite; */
   }
 
-  #logo-container{
+  /* #logo-container{
     display:block;
     padding:20px;
     background: rgba(0, 0, 0, 0.6);
@@ -70,7 +70,8 @@
     position:fixed;
     top:40%;
     left:44%;
-  }
+  } */
+
 
 
   .terminal-window{
