@@ -1,16 +1,3 @@
-let serverAvailable = false
-
-const pingServer = () =>{
-   return new Promise((resolve)=>{
-      
-      setTimeout(()=>{
-        resolve(false)
-      }, 1000)
-      serverAvailable = $.get("/online")
-      resolve({ available:serverAvailable })
-
-   })
-}
 
 const execRemoteCommand = (cmd, args=[]) =>{
   return new Promise((resolve)=>{
@@ -57,14 +44,14 @@ const runFileSystemCommand = (cmd, args=[]) =>{
 }
 
 const exec = async (cmd, args=[]) =>{
-  
-  if(serverAvailable){
+  if(window.location.hostname == "localhost"){
     return await execServerCommand(cmd, [...args])//execRemoteCommand(cmd, [...args])
   }else{
+    console.log('Local stuff')
     return runFileSystemCommand(cmd, [...args])
   }
 }
 
-pingServer()
+
 
 
