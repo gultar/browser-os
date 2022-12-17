@@ -20,7 +20,7 @@ const launchNotepad = (filename, content, exists=false) =>{
         title: "", 
         height:"95%", 
         width:"80%",
-        url:"./js/applications/notepad.html",//"./pages/editor.html",
+        url:"./js/external/notepad.html",//"./pages/editor.html",
     })
 
     setTimeout(()=>{

@@ -1,26 +1,31 @@
-let isOpen = false
-const launchEditor = (filename, content) =>{
-    if(isOpen) return false;
+let isOpenCodeEditor = false
+const launchCodeEditor = (filename, content, exists=false) =>{
+    if(isOpenCodeEditor) return false;
 
-    let editor = false;
+    const save = async (filecontent) =>{
+        const fileExists = await exec("getFile", [filename])
 
-    const save = async () =>{
-        const filecontent = editor.getValue()
-        const edited = await exec("editFile", [filename, filecontent])
+        if(!fileExists){
+            return await exec("touch", [filename, filecontent])
+        }else{
+            return await exec("editFile", [filename, filecontent])
+
+        }
+
     }
 
     const winbox = new WinBox({ 
         title: "", 
         height:"95%", 
         width:"80%",
-        url:"./js/applications/code-editor.html",
+        url:"./js/external/code-editor.html",
     })
 
     setTimeout(()=>{
         const [ iframe ] = winbox.window.querySelector(".wb-body").childNodes
         
         const iWindow = iframe.contentWindow
-        const startEditor = iWindow.startEditor
+        const startCodeEditor = iWindow.startCodeEditor
         const getContent = iWindow.getContent
 
         iWindow.addEventListener("message", async (event)=>{
@@ -32,10 +37,10 @@ const launchEditor = (filename, content) =>{
             }
         })
 
-        startEditor(filename, content)
+        startCodeEditor(filename, content)
 
     }, 500)
 
 }
 
-window.launchEditor = launchEditor
+window.launchCodeEditor = launchCodeEditor

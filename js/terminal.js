@@ -42,7 +42,7 @@ class TerminalEmulator{
         "tirex":"Start the famous tirex game from Google",
         "lofi":"Opens up Lo Fi Girl's Youtube channel",
         "webamp":"Launches a Webamp Music Player window",
-        "editor":"Launches an Ace Editor window",
+        "notepad":"Launches a text editor window",
       }
     };
 
@@ -77,7 +77,6 @@ class TerminalEmulator{
       lofi:()=>runLofi(),
       webamp:()=>runWebamp(),
       notepad:async (args)=>await this.runNotepad(args),
-      code:async (args)=>await this.runCodeEditor(args),
       weather:async()=>await this.getWeather(),
       whoami:()=>this.whoami(),
       test:()=>this.testEditor(),
@@ -183,9 +182,6 @@ class TerminalEmulator{
     return true
   }
 
-  testEditor(){
-    new WinBox({ title: "Window Title", url:'./js/applications/kitchen-sink.html' })
-  }
 
   runFileManager(){
     const anchor = document.getElementById("filemanager")
