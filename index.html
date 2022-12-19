@@ -82,7 +82,10 @@
                 buttons: {
                     Yes: function() {
                         $( this ).dialog( "close" );
-                        location.href = location.origin
+                        if(location.hostname === 'localhost')
+                            location.href = location.origin
+                        else
+                            location.reload()
                     },
                     No: function() {
                         $( this ).dialog( "close" );
@@ -213,3 +216,4 @@
 
 </body>
 </html>
+
