@@ -9,11 +9,15 @@ function changeBackground(args){
     }
 }
 
-function setWaveEffect(){
+function toggleWaveEffect(){
     // $('#page-wrapper').css("background", "linear-gradient(-45deg, #2c4f99, #365afc, #414141, #575757)")
     // $('#page-wrapper').css("background-size", "400% 400%")
     const pageWrapper = document.getElementById('page-wrapper')
-    pageWrapper.style.animation = "gradient 180s ease infinite"
+    if(pageWrapper.style.animation !== "")
+      pageWrapper.style.animation = "gradient 60s ease infinite"
+    else
+      pageWrapper.style.animation = ""
+
     return true
 }
 
@@ -23,15 +27,6 @@ function toggleParticles(){
   }else{
     initParticles()
   }
-}
-
-function toggleWaveEffect(){
-/**
- * #page-wrapper
- *  background: linear-gradient(-45deg, #2c4f99, #365afc, #414141, #575757);
-    background-size: 400% 400%;
-    animation: gradient 180s ease infinite;
- */
 }
 
 function changeWindowStyle(){

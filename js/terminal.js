@@ -28,7 +28,9 @@ class TerminalEmulator{
         "mkdir":"Create the DIRECTORY, if it does not already exist. Usage: mkdir directoryname/",
         "touch":"Creates an empty file if it does not already exist. Usage: touch filename",
         "rmdir":"Remove the DIRECTORY, if it is empty. Usage: rmdir directoryname",
-        "whoami":"Displays information concerning host"
+        "whoami":"Displays information concerning host",
+        "reboot":"Reboots application",
+        "shutdown":"Closes application",
       },
       "settings":{
         "background":"Changes the background image. Usage: background http://url.url",
@@ -63,6 +65,10 @@ class TerminalEmulator{
       rmdir:async(args)=>await this.runBash("rmdir",args),
       rm:async(args)=>await this.runBash("rm",args),
       whereis:async(args)=>await this.runBash("whereis", args),
+      '#':(args)=>this.runRoot(args),
+      reboot:()=>this.reboot(),
+      shutdown:()=>this.shutdown(),
+      logout:()=>logout(),
       //Settings
       background:(args)=>changeBackground(args),
       //Applications
@@ -80,7 +86,10 @@ class TerminalEmulator{
       editor:async (args)=>await this.runNotepad(args), //Alias
       weather:async()=>await this.getWeather(),
       whoami:()=>this.whoami(),
-      view:async (args)=>await this.viewImage(args)
+      view:async (args)=>await this.viewImage(args),
+      test:(args)=>this.testSomething(args),
+      explorer:(args)=>this.runExplorer(args),
+      browser:(args)=>this.startBrowser(args),
     }
   }
   
@@ -139,6 +148,14 @@ class TerminalEmulator{
     }
   }
 
+  reboot(){
+    location.reload()
+  }
+
+  shutdown(){
+    window.close()
+  }
+
   echo(args){
     const message = args.join(" ")
     this.output(message)
@@ -171,6 +188,13 @@ class TerminalEmulator{
     return result
   }
 
+  async runRoot(args){
+    const command = args.join(" ")
+    let result = await runRootCommand(command)
+    this.output(`<pre>${result}</pre>`)
+    return result
+  }
+
   async runNotepad(args){
     const path = args[0]
     const file = await exec("getFile", [path])
@@ -181,6 +205,15 @@ class TerminalEmulator{
 
     launchNotepad(path, content, (file?"exists":false))
     return true
+  }
+
+  runExplorer(args){
+    makeFileExplorer()
+  }
+
+  startBrowser(args){
+    const url = args[0]
+    launchBrowser(url)
   }
 
   async viewImage(args){
@@ -203,6 +236,7 @@ class TerminalEmulator{
 
   whoami(){
     this.output(navigator.userAgent)
+    this.output(`Username: ${getUsername()}`)
   }
 
   async processCommand(commandLine){

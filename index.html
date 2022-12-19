@@ -6,14 +6,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="./css/main.css" type="text/css"/>
     <link rel="stylesheet" href="./css/topnav.css" type="text/css"/>
+    <link rel="stylesheet" href="./css/external/jquery-ui.min.js">
+    <link rel="stylesheet" href="./css/external/jquery-ui.structure.min.css">
+    <link rel="stylesheet" href="./css/external/jquery-ui.theme.min.css">
     <script src="./js/external/winbox.bundle.min.js"></script>
     <script src="./js/external/jquery-2.1.1.min.js"></script>
     <script  src="./js/external/jquery-ui.min.js"></script>
     <script src="./js/external/boxicons.js"></script>
-    <script src="./js/external/socket.io.min.js"></script>
     <script src="./js/external/ace.min.js"></script>
     <script src="./js/external/webamp.bundle.js"></script>
     <script src="./js/classes/virtualfilesystem.js"></script>
+    <script src="./js/applications/browser.js"></script>
+    <script src="./js/applications/browser-history.js" ></script>
     <script src="./js/commands/web-cmds.js"></script>
     <script src="./js/commands/settings.js"></script>
     <script src="./js/applications/webamp.js"></script>
@@ -24,35 +28,95 @@
     <script src="./js/file-explorer/view-image.js"></script>
     <script src="./js/file-explorer/explore.js"></script>
     <script src="./js/filesystem-init.js"></script>
-    <script src="./js/websocket-init.js"></script>
+    <script src="./js/cmd-runner.js"></script>
     <script src="./js/applications/weather.js"></script>
     <script src="./js/external/particles.min.js"></script>
     <script src="./js/particlejs-init.js"></script>
-    <script src="./init-script.js" defer></script>
+    <script src="./js/init-script.js" defer></script>
+    
 
     <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests" />
     <title>Document</title>
 </head>
 <body>
     <script>
-        const reboot = () =>{
-            const confirmed = confirm("Are you sure you want to reboot?")
-            if(confirmed){
-                location.reload()
+        const getUsername = () =>{
+            // console.log(window.location.href, searchParams)
+            if(window.location.hostname == 'localhost'){
+                const [ url, searchParams ] = window.location.href.split("?")
+                const [ tokenAndValue, usernameAndValue ] = searchParams.split("&")
+                let [ usernameLabel, value ] = usernameAndValue.split("=")
+                value = value.replace("#", '')
+                return value
             }else{
-                return
+                return 'guest'
             }
             
         }
 
-        const shutdown = () =>{
-            const confirmed = confirm("Are you sure you want to shutdown?")
-            if(confirmed){
-                window.close()
-            }else{
-                return
-            }
+
+
+        const logout = async () =>{
             
+            
+            const [ url, searchParams ] = window.location.href.split("?")
+            const username = getUsername()
+            window.location.href = url
+            
+            if(window.location.hostname == 'localhost'){
+                const loggedOut = await Promise.resolve($.post("/logout", {
+                    logout:true,
+                    username:username
+                }))
+            }
+
+        }
+
+        const reboot = () =>{
+            $("#dialog-message").html(`<span>Are you sure you want to reboot?</span>`)
+            $( "#dialog-message" ).dialog({
+                resizable: false,
+                height: "auto",
+                width: 400,
+                modal: true,
+                buttons: {
+                    Yes: function() {
+                        $( this ).dialog( "close" );
+                        location.href = location.origin
+                    },
+                    No: function() {
+                        $( this ).dialog( "close" );
+                    }
+                }
+            });
+        }
+
+        // const shutdown = () =>{
+        //     const confirmed = confirm("Are you sure you want to shutdown?")
+        //     if(confirmed){
+        //         window.close()
+        //     }else{
+        //         return
+        //     }
+            
+        // }
+        const shutdown = () =>{
+            $("#dialog-message").html(`<span>Are you sure you want to shutdown?</span>`)
+            $( "#dialog-message" ).dialog({
+                resizable: false,
+                height: "auto",
+                width: 400,
+                modal: true,
+                buttons: {
+                    Yes: function() {
+                        $( this ).dialog( "close" );
+                        window.close()
+                    },
+                    No: function() {
+                        $( this ).dialog( "close" );
+                    }
+                }
+            });
         }
     </script>
     <div id="page-wrapper" class="flex">
@@ -98,6 +162,7 @@
                             </li>
                             <li><a href="#"><img class="main-menu-icons" src="./images/icons/system.png" />System</a>
                                 <ul>
+                                    <li><a onclick="logout()">Logout</a></li>
                                     <li><a onclick="reboot()">Reboot</a></li>
                                     <li><a onclick="shutdown()">Shutdown</a></li>
                                 </ul>
@@ -114,27 +179,37 @@
 
         <div id="page-anchor"></div>
         <div id="filemanager"></div>
+
         <div id="webamp"></div>
         <div id="main-container">
             <div id="logo-container"> 
                 <!-- style="display:block;padding:20px;background: rgba(0, 0, 0, 0.6);box-shadow: 0 0 0 5px rgb(45, 52, 63);border-radius: 50%;position:fixed;top:40%;left:44%;" -->
-                <img id="desktop-logo" src="./images/icons/desktop-logo-3.png" style="">
+                <img id="desktop-logo" src="./images/icons/constellation-3.png" style="">
             </div>
             <canvas class="background"></canvas>
         </div>
+        <div id="browser-view" style="width:100%; height:100%; visibility:hidden;">
+            
+        </div>
+        <div id="dialog-message" title="System Message">
+            
+        </div>
+        
     </div>
     <script type="text/javascript">
-        function disableF5(e) { if ((e.which || e.keyCode) == 116 || (e.which || e.keyCode) == 82) e.preventDefault(); };
+        const popup = (...text) =>{
+            $("#dialog-message").append(...text)
+            $( "#dialog-message" ).dialog();
+        }
+
+        function disableF5(e) { if ((e.which || e.keyCode) == 116) e.preventDefault(); };
         
         $(document).ready(function(){
              $(document).on("keydown", (e)=>{
-                // console.log('Muppet')
-                // disableF5(e)
+                disableF5(e)
              });
         });
     </script>
 
 </body>
-
-
 </html>

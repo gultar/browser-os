@@ -14,21 +14,11 @@ body{
 }
   /*okay*/
 .background {
-    
-  display
-  :
-   block
-  ;
-    
-  top
-  : 0;
-    
-  left
-  : 0;
-    
-  z-index
-  : 0;
-  }
+  display:block;
+  top:0;
+  left:0;
+  z-index:0;
+}
 
 @keyframes gradient {
   0% {
@@ -50,26 +40,28 @@ body{
   --console-window-background:rgba(0,0,0,var(--window-tint));
   --terminal-font-size:8pt;
   --background:#45505f;
-  --winbox-background:transparent
+  --winbox-background:transparent;
+  --particle-color:#48F2E3;
 }
 
 #page-wrapper{
   height:100%;
   width:100%;
-  background: linear-gradient(-90deg, #2c4f99, #365afc, #414141, #575757);
+  background: linear-gradient(-60deg, #2c4f99, #365afc, #414141, #575757);
   background-size: 400% 400%;
-  /* animation: gradient 180s ease infinite; */
+  animation: gradient 120s ease infinite;
 }
 
 #logo-container{
   display:block;
   padding:20px;
   background: rgba(0, 0, 0, 0.6);
-  box-shadow: 0 0 0 5px rgb(45, 52, 63);
+  box-shadow: 0 0 0 4px rgba(45, 52, 63, 0.5);
   border-radius: 50%;
   position:fixed;
-  top:40%;
+  top:42%;
   left:44%;
+  z-index: 1;
 }
 
 
@@ -280,6 +272,13 @@ p{
     box-shadow: 0 0 0 5px rgb(45, 52, 63);
   }
 
+}
+
+@media only screen and (max-device-width: 1000px){
+  #logo-container{
+    top:40%;
+    left:40%;
+  }
 }
 
 @media only screen and (min-width : 480px) and (max-device-width: 560px){
