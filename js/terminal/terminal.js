@@ -14,6 +14,7 @@ class Terminal{
     this.histpos_ = 0;
     this.histtemp_ = 0;
     this.mode = "terminal"
+    this.isDoubleTab = false
     this.listPossibilities = false
     this.helpMsgs = {
       "system":{
@@ -421,9 +422,11 @@ class Terminal{
 
   //Already existing
   async processNewCommand(e){
+    
     let [ cmd, ...args ] = this.parseArguments(this.cmdLine_.value);
 
     if (e.key == "Tab") { // tab
+      
       e.preventDefault();
       this.autoCompleteCommand()
       await this.parsePath(args, cmd)
@@ -463,27 +466,6 @@ class Terminal{
       return { error:e }
     }
   }
-
-  // runTrueShellCommand(cmd, args){
-  //   return new Promise(resolve=>{
-  //     if(cmd == "#" || cmd == "exit"){
-  //       this.enterTrueShellMode(true)
-  //       return true
-  //     }
-  
-  //     const command = `${cmd} ${args.join(" ")}`
-      
-  //     let stdinEnabled = false
-      
-  //     if(!stdinEnabled)window.ipcRenderer.send('command', command.trim())
-  //     else window.ipcRenderer.send('stdin', command.trim())
-      
-  //     window.ipcRenderer.on('exit', (code)=>{
-  //       stdinEnabled = false
-  //     })
-  //     stdinEnabled = true
-  //   })
-  // }
 
   enterNewLine(){
     this.addCurrentLineToConsole();
@@ -526,6 +508,19 @@ class Terminal{
   }
 
   async parsePath(args=[], cmd){
+
+    setTimeout(()=>{
+      this.isDoubleTab = false
+    }, 1000)
+
+    if(this.isDoubleTab){
+      const currentContents = await exec("ls", [])
+      if(currentContents && currentContents.length){
+        this.output(currentContents.join("<br>"))
+      }
+    }else{
+      this.isDoubleTab = true
+    }
     
     for(const arg of args){
       const argIndex = args.indexOf(arg)

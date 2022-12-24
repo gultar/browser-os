@@ -54,19 +54,49 @@ let parenter = {
 
 let persistanceInterface = {
     isInterface:true,
-    touch:()=>{},
+    touch:(filename, content)=>{
+        if(typeof localStorage !== 'undefined'){
+            localStorage.setItem(filename, JSON.stringify({
+                name:filename,
+                content:content,
+            }))
+        }
+    },
     mkdir:()=>{},
     rmdir:()=>{},
     rm:()=>{},
     editFile:(filename, newContent)=>{
         if(typeof localStorage !== 'undefined'){
-            localStorage.setItem(filename, newContent)
+            const fileString = localStorage.getItem(filename)
+            const file = JSON.parse(fileString)
+            file.content = newContent
+            localStorage.setItem(filename, JSON.stringify(file))
         }
     },
-    cp:()=>{},
-    mv:()=>{},
+    cp:(pathFrom, pathTo)=>{
+        if(typeof localStorage !== 'undefined'){
+            const fileString = localStorage.getItem(pathFrom)
+            localStorage.setItem(pathTo, fileString)
+        }
+    },
+    mv:(pathFrom, pathTo)=>{
+        if(typeof localStorage !== 'undefined'){
+            const fileString = localStorage.getItem(pathFrom)
+            localStorage.setItem(pathTo, fileString)
+            localStorage.removeItem(pathFrom)
+        }
+    },
     cd:()=>{},
     resolvePath:(path)=>{return path},
+    getFile:()=>{
+        if(typeof localStorage !== 'undefined'){
+            const fileString = localStorage.getItem(path)
+            if(!fileString) return false 
+            
+            const file = JSON.parse(fileString)
+            return file
+        }
+    },
     getFileContent:(path)=>{
         if(typeof localStorage !== 'undefined'){
             const fileString = localStorage.getItem(path)
@@ -76,15 +106,6 @@ let persistanceInterface = {
             return file.content
         }
     },
-    getFileContentSync:(path)=>{
-        if(typeof localStorage !== 'undefined'){
-            const fileString = localStorage.getItem(path)
-            if(!fileString) return false 
-            
-            const file = JSON.parse(fileString)
-            return file.content
-        }
-    }
 }
 
 
@@ -462,8 +483,6 @@ class VirtualFileSystem{
         if(exists) throw new Error(`touch: file ${filename} already exists`)
 
         const realPath = this.persistance.resolvePath(filePath)
-
-        console.log('REALPATH', realPath)
         
         const file = new File(filename, content, realPath)
         directory.contents.push(file)
