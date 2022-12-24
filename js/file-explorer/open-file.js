@@ -1,18 +1,12 @@
-const openFile = async (filename) =>{
-    const path = await exec('whereis', [filename])
+const openFile = async (path) =>{
     const file = await exec("getFile", [path])
-    let fileExists = false
-    
-    if(file){
-        fileExists = true
-    }
-    
-    const fileExtension = handleExtension(filename)
+
+    const fileExtension = handleExtension(file.name)
     if(fileExtension == "png" || fileExtension == 'jpg' || fileExtension == "gif"){
         
         window.viewImage(file)
     }else{
-        window.launchNotepad(filename, file.content)
+        window.launchEditor(path, file.content, path)
     }
     
 }

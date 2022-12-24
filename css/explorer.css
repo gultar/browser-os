@@ -1,14 +1,80 @@
-*{
-    --number-of-explorer-items: 8
-}
+@import url("./variables.css");
 
 #file-explorer-wrapper{
+    background-color: rgb(57, 64, 71);
     max-width:100%;
+    height:100%;
     display:flex;
     justify-content:flex-start;
     flex-direction:row;
     flex-wrap: wrap;
-    height: auto;
+    overflow: scroll;
+}
+
+#explorer-window-container{
+    display:block;
+    width:100%;
+    margin-top:6vh;
+}
+
+#explorer-window{
+    margin-top:0;
+    width:100%;
+    height:95%;
+    display:flex;
+    justify-content: flex-start;
+}
+
+#navigation-bar-container{
+    display: flex;
+    width: 95%;
+    margin-top: 1vh;
+}
+
+#navigation-bar-container input{
+    display:inline-block;
+    width:80%;
+    margin-left: 5vh;
+    margin-right: 5vh;
+}
+
+#side-bar{
+    padding: 0;
+    width:25%;
+    min-width: 15%;
+    height: 95%;
+    margin:2vh;
+    display:block;
+    background-color: darkgray !important;
+    resize: horizontal;
+    scroll-behavior: smooth;
+    overflow: scroll;
+}
+
+#side-bar ul{
+    margin: 0;
+    padding: 2vh;
+}
+
+#side-bar ul li{
+    list-style: none;
+}
+
+#quick-access-title{
+    margin-top:5px;
+    display:block;
+    width:100%;
+    text-align:center;
+}
+
+.dir-link{
+    cursor: pointer;
+    display: block;
+    margin:0;
+}
+
+.dir-link:hover{
+    text-decoration: underline;
 }
 
 .file-menu {
@@ -31,18 +97,26 @@
 }
 
 #explorer{
+    min-width: 40%;
+    width:75%;
     display: grid;
-    grid-template-columns: repeat(var(--number-of-explorer-items), 15vh);
+    grid-template-columns: repeat(var(--number-of-explorer-items), var(--size-of-item));
+    grid-auto-rows: var(--height-of-item)
+    
+}
+
+.explorer-item-wrapper{
+    display: flex;
+    justify-content: space-around;
 }
 
 .explorer-item{
     overflow-wrap: break-word;
     display:block;
-    /* border:2px solid lawngreen; */
     font-size:8pt;
-    margin:5px;
     height:auto;
-    width:12vh;
+    width:10vh;
+    margin: var(--distance-apart);
 }
 
 
@@ -55,22 +129,28 @@
 }
 
 #explorer {
-    margin:10vh 5vh;
+    margin:2vh 2vh;
 }
 
-@media screen and (min-width : 500px) and (max-width : 1000px)  {
+@container (max-width : 1000px)  {
     *{
         --number-of-explorer-items: 6;
     }
 }
 
-@media screen and (min-width : 320px) and (max-width : 500px)  {
+@container (max-width : 800px)  {
+    *{
+        --number-of-explorer-items: 5;
+    }
+}
+
+@container (max-width : 700px)  {
     *{
         --number-of-explorer-items: 4;
     }
 }
 
-@media screen and (max-width : 320px)  {
+@container (max-width : 500px)  {
     *{
         --number-of-explorer-items: 3;
     }

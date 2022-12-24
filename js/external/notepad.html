@@ -27,6 +27,7 @@
 
     const save = () =>{
         const content = getContent()
+        //message is received in ./public/js/applications/editor.js
         window.postMessage({ saveContent:content })
     }
 
@@ -40,6 +41,9 @@
 
         if(!mode) mode = 'text'
         if(!theme) theme = "monokai"
+
+        console.log('CONTENT', content)
+        console.log('Filename', filename)
 
         mode = mode.toLowerCase()
         editor = ace.edit("editor");

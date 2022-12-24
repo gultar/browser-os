@@ -1,22 +1,24 @@
 const initScript = () =>{
     initParticles()
-    // toggleWaveEffect()
     initTerminalClock()
-    determineOrigin()
+    verifyIfElectronApp()
     setUsernameAsGlobal()
 }
 
-const determineOrigin = async () =>{
+const verifyIfElectronApp = async () =>{
     if(window.location.hostname == 'localhost'){
         const origin = await $.get("http://localhost:8000/origin")
         window.isElectron = origin.electron
+        window.MOUNT_POINT = origin.mountPoint
+        console.log('Received mount point', origin)
     }
 }
 
 const setUsernameAsGlobal = () =>{
     window.username = getUsername()
-    console.log(window.username)
+    console.log('Active user:',window.username)
 }
+
 
 initScript()
 
