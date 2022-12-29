@@ -54,19 +54,49 @@ let parenter = {
 
 let persistanceInterface = {
     isInterface:true,
-    touch:()=>{},
+    touch:(filename, content)=>{
+        if(typeof localStorage !== 'undefined'){
+            localStorage.setItem(filename, JSON.stringify({
+                name:filename,
+                content:content,
+            }))
+        }
+    },
     mkdir:()=>{},
     rmdir:()=>{},
     rm:()=>{},
     editFile:(filename, newContent)=>{
         if(typeof localStorage !== 'undefined'){
-            localStorage.setItem(filename, newContent)
+            const fileString = localStorage.getItem(filename)
+            const file = JSON.parse(fileString)
+            file.content = newContent
+            localStorage.setItem(filename, JSON.stringify(file))
         }
     },
-    cp:()=>{},
-    mv:()=>{},
+    cp:(pathFrom, pathTo)=>{
+        if(typeof localStorage !== 'undefined'){
+            const fileString = localStorage.getItem(pathFrom)
+            localStorage.setItem(pathTo, fileString)
+        }
+    },
+    mv:(pathFrom, pathTo)=>{
+        if(typeof localStorage !== 'undefined'){
+            const fileString = localStorage.getItem(pathFrom)
+            localStorage.setItem(pathTo, fileString)
+            localStorage.removeItem(pathFrom)
+        }
+    },
     cd:()=>{},
     resolvePath:(path)=>{return path},
+    getFile:()=>{
+        if(typeof localStorage !== 'undefined'){
+            const fileString = localStorage.getItem(path)
+            if(!fileString) return false 
+            
+            const file = JSON.parse(fileString)
+            return file
+        }
+    },
     getFileContent:(path)=>{
         if(typeof localStorage !== 'undefined'){
             const fileString = localStorage.getItem(path)
@@ -76,15 +106,6 @@ let persistanceInterface = {
             return file.content
         }
     },
-    getFileContentSync:(path)=>{
-        if(typeof localStorage !== 'undefined'){
-            const fileString = localStorage.getItem(path)
-            if(!fileString) return false 
-            
-            const file = JSON.parse(fileString)
-            return file.content
-        }
-    }
 }
 
 
@@ -108,7 +129,7 @@ class File{
 
 class Directory{
     
-    constructor(name, parent, contents=[]){
+    constructor(name, parent){
         this[".."] = parent
         this.name = name
         this.contents = []
@@ -372,9 +393,10 @@ class VirtualFileSystem{
         }else{
 
             directory = this.find(path)
-
+            if(!directory) return new Error(`ls: ${path} not found`)
+            
             const isDirectory = this.isDir(directory)
-            if(!isDirectory) throw new Error(`Command ls failed. ${path} is not a directory`)
+            if(!isDirectory) return new Error(`ls: ${path} is not a directory`)
         }
 
         let contents = [];
@@ -461,8 +483,6 @@ class VirtualFileSystem{
         if(exists) throw new Error(`touch: file ${filename} already exists`)
 
         const realPath = this.persistance.resolvePath(filePath)
-
-        console.log('REALPATH', realPath)
         
         const file = new File(filename, content, realPath)
         directory.contents.push(file)
@@ -621,7 +641,8 @@ class VirtualFileSystem{
                         currentDir = currentDir[dir]
                     }
                 }else{
-                    throw new Error(`Directory ${dir} could not be found`)
+                    // throw new Error(`Directory ${dir} could not be found`)
+                    return false
                 }
             }
         }
@@ -650,14 +671,13 @@ class VirtualFileSystem{
         }
     }
 
-    async editFile(filename, newContent){
-        // const found = await this.lookup(filename)
-        const file = await this.getFile(filename)
+    async editFile(path, newContent){
+        const file = await this.getFile(path)
         if(!file) return false
         // file.content = newContent
         // const saved = this.workingDir.setFile(filename, file)
 
-        return await this.persistance.editFile(filename, newContent)
+        return await this.persistance.editFile(path, newContent)
     }
 
     async saveFile(path, newContent){

@@ -672,8 +672,8 @@ const getNameFromExtension = (extension) =>{
         sci: 'Scilab',
         sce: 'Scilab',
         self: 'Self',
-        sh: 'Shell',
-        bash: 'Shell',
+        sh: 'sh',
+        bash: 'sh',
         bats: 'Shell',
         command: 'Shell',
         ksh: 'Shell',
@@ -904,3 +904,5 @@ const getNameFromExtension = (extension) =>{
 
       return codingDictionary[extension]
 }
+
+window.getNameFromExtension = getNameFromExtension

@@ -112,6 +112,35 @@ body{
   
 }
 
+#icon-container{
+  padding:5vh 2vh;
+  /* display:grid;
+  grid-template-columns: repeat(auto-fill, var(--size-of-desktop-icon-slot));
+  grid-template-rows: repeat(auto-fill, var(--size-of-desktop-icon-slot)); */
+  list-style: none;
+  background-color: transparent;
+  position:fixed;
+}
+
+
+.desktop-icon{
+  height:var(--size-of-desktop-icons);
+  width:var(--size-of-desktop-icons);
+  /* background-color: aqua; */
+}
+
+.desktop-icon-link{
+  display:flex;
+  flex-direction:column;
+}
+
+.placeholder{
+  visibility: hidden;
+}
+
+.selected{
+}
+
 @keyframes gradient {
   0% {
     background-position: 0% 50%;

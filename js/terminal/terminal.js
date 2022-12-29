@@ -1,6 +1,8 @@
 class Terminal{
-  constructor(id){
+  constructor(id, directoryPointerId){
     this.id = id
+    this.directoryPointerId = directoryPointerId
+
     this.cmdLineId = `#cmdline-${this.id}`
     this.cmdLine_ = document.querySelector(this.cmdLineId);
     this.outputId = `#output-${this.id}`
@@ -93,9 +95,9 @@ class Terminal{
       weather:async()=>await this.getWeather(),
       whoami:()=>this.whoami(),
       view:async (args)=>await this.viewImage(args),
-      test:(args)=>this.testSomething(args),
+      test:async(args)=>await this.testSomething(args),
       explorer:(args)=>this.runExplorer(args),
-      
+      download:async(args)=>await this.downloadFile(args),
     }
   }
   
@@ -103,6 +105,10 @@ class Terminal{
     this.defineKeyEventListeners();
     this.initTerminalMsg();
     this.setPromptDecoration()
+  }
+
+  async exec(cmd, args){
+    return await exec(cmd, args, this.directoryPointerId)
   }
 
   setPromptDecoration(decoration=`[${window.username}@sh]`){
@@ -211,7 +217,7 @@ class Terminal{
   }
 
   async runBash(cmd, args){
-    let result = await exec(cmd, args)
+    let result = await this.exec(cmd, args)
     let formattedResult = (typeof result == 'object' ? JSON.stringify(result, null, 2) : result)
     this.output(`<xmp>${formattedResult}</xmp>`)
     return result
@@ -223,7 +229,7 @@ class Terminal{
       console.log('Is root mode')
       const cancel = (this.mode == "true-shell")
       console.log('Cancel?', cancel)
-      this.enterTrueShellMode(cancel)
+      // this.enterTrueShellMode(cancel)
     }else{
       const command = args.join(" ")
       let result = await runRootCommand(command)
@@ -232,45 +238,9 @@ class Terminal{
     }
   }
 
-  // enterTrueShellMode(cancel){
-  //   if(!cancel){
-  //     console.log('Enters ')
-  //     this.mode = "true-shell"
-  //     this.setPromptDecoration(`[${window.username}@#]`)
-  //     this.ioTrueShell = io('http://localhost:3000')
-      
-  //     this.ioTrueShell.on('connect', ()=>{
-  //       console.log('Connected')
-  //     })
-  
-  //     this.ioTrueShell.on('stdout', (data)=>{
-  //       console.log('Stdout', data)
-  //       this.output(`<pre>${data}</pre>`)
-  //     })
-  
-  //     this.ioTrueShell.on('stderr', (data)=>{
-  //       console.log('Stderr', data)
-  //       this.output(`<pre>${data}</pre>`)
-  //     })
-  
-  //     this.ioTrueShell.on('close', ()=>{
-  //       this.output("Execution terminated")
-  //       this.ioTrueShell.close()
-  //       delete this.ioTrueShell
-  //     })
-
-  //   }else{
-  //     console.log('Exits')
-  //     this.mode = "terminal"
-  //     this.setPromptDecoration(`[${window.username}@sh]`)
-  //     this.ioTrueShell.disconnect()
-  //     this.ioTrueShell = false
-  //   }
-  // }
-
   async runEditor(args){
     const path = args[0]
-    const file = await exec("getFile", [path])
+    const file = await this.exec("getFile", [path])
     let content = ""
     if(file){
       content = file.content
@@ -281,7 +251,18 @@ class Terminal{
   }
 
   runExplorer(args){
-    makeFileExplorer()
+    //makeFileExplorer()
+    new FileExplorer(0,0)
+  }
+
+  async downloadFile(args){
+    const url = args[0]
+    window.ipcRenderer.send('will-download', url)
+    window.ipcRenderer.on('download-percentage', (event, message)=>{
+      const { percentage, remainingSize } = message
+      this.output(`${percentage}% -- Remaining Bytes: ${remainingSize}`)
+    })
+    window.ipcRenderer.once('download')
   }
 
   startBrowser(args){
@@ -289,19 +270,19 @@ class Terminal{
     launchBrowser(url)
   }
 
-  testSomething(args){
-    // const wd = await exec("pwd")
-    // const filename = args[0]
-    // const path = `${wd}/${filename}`
-    // const content = await exec("getFileContent", [path])
-    // this.output(content)
-    window.api.invoke('myfunc')
-    .then(function(res) {
-        console.log(res); // will print "This worked!" to the browser console
+  async testSomething(args){
+    const anchor = document.getElementById('page-anchor')
+    const win = new WinBox({
+      mount:anchor,
     })
-    .catch(function(err) {
-        console.error(err); // will print "This didn't work!" to the browser console.
-    });
+
+    
+    const collapse = new CollapsibleBar({
+      startingPath:"/",
+      mountDOM:anchor
+    })
+    collapse.init()
+    // new Editor("/system/home/desktop/muppet")
   }
 
   runFileManager(){
@@ -514,7 +495,7 @@ class Terminal{
     }, 1000)
 
     if(this.isDoubleTab){
-      const currentContents = await exec("ls", [])
+      const currentContents = await this.exec("ls")
       if(currentContents && currentContents.length){
         this.output(currentContents.join("<br>"))
       }
@@ -534,7 +515,7 @@ class Terminal{
         partialPath = arg
       }
   
-      const partialPathHasContent = await exec("ls", [partialPath])
+      const partialPathHasContent = await this.exec("ls", [partialPath])
       if(partialPathHasContent && partialPathHasContent.length){
         this.output(partialPathHasContent.join("<br>"))
       }
@@ -549,13 +530,13 @@ class Terminal{
         partialTarget = partialPath
       }
       if(relativePath !== "") relativePath = relativePath + "/"
-      const suggestions = await exec("autoCompletePath", [relativePath+partialTarget])
-      
+      const suggestions = await this.exec("autoCompletePath", [relativePath+partialTarget])
+      console.log('Suggestions', suggestions)
       if(suggestions.length > 1){
         this.output(suggestions.join(" "))
       }else if(suggestions.length === 1){
 
-        const contentOfTarget = await exec('ls', [relativePath+partialTarget])
+        const contentOfTarget = await this.exec('ls', [relativePath+partialTarget])
         const isCompletePath = contentOfTarget.length > 0
         if(!isCompletePath){
           const argString = relativePath+partialTarget
@@ -564,7 +545,7 @@ class Terminal{
         }
         
       }else{
-        const current = await exec("ls")
+        const current = await this.exec("ls")
         this.output(current.join("<br>"))
       }
     }
@@ -573,25 +554,8 @@ class Terminal{
     
   }
 
-  // autoCompletePath(cmd, partialPath){
-  //   const dirnames = FileSystem.wd().getDirnames()
-  //   const filenames = FileSystem.wd().getFilenames()
-  //   const potentialDirs = this.findMatchinPartialValues(partialPath, [...dirnames, ...filenames])
-  //   if(potentialDirs.length === 1){
-  //     this.cmdLine_.value = `${cmd} ${potentialDirs[0]}/`
-  //   }else{
-  //     if(this.listPossibilities == true){
-  //       this.output(potentialDirs.join(" "))
-  //       this.listPossibilities = false
-  //     }else{
-  //       this.listPossibilities = true
-  //     }
-  //   }
-  // }
-
   addCurrentLineToConsole(){
     const line = this.cmdLine_.parentNode.parentNode.cloneNode(true);
-    console.log('Line', line)
     line.removeAttribute('id')
     line.classList.add('line');
     const input = line.querySelector(this.cmdLineId);

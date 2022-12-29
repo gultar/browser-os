@@ -5,14 +5,21 @@ const launchBrowser = (url) =>{
         else url = 'https://www.google.com/webhp?igu=1'
     }
 
-    let browserNumber = Object.keys(activeWebviews)+1
+    let browserNumber = Date.now()
 
     const browserView = document.getElementById("browser-view")
     let browserDOM = ""
 
     if(window.isElectron){
         browserDOM = `
-        <webview class="responsive-webview" id="webview-${browserNumber}" src="${url}" autosize="on" style="display:flex; min-width:100%; min-height:95%" >
+        <webview 
+            class="responsive-webview" 
+            id="webview-${browserNumber}" 
+            src="${url}" 
+            autosize="on" 
+            style="display:flex; 
+            min-width:100%; 
+            min-height:95%" >
         </webview>
         `
     }
@@ -27,11 +34,22 @@ const launchBrowser = (url) =>{
             <div class="navigation-buttons">
                 <span class="button"><a class="back-button" onclick="window.postMessage({ back:'browser-${browserNumber}' });return false"></a></span>
                     | 
-                <span class="button" ><a class="forward-button" onclick="window.postMessage({ forward:'browser-${browserNumber} });return false"></a></span>
+                <span class="button" ><a class="forward-button" onclick="window.postMessage({ forward:'browser-${browserNumber}' });return false"></a></span>
+                <span class="button" ><a class="refresh-button" onclick="window.postMessage({ refresh:'browser-${browserNumber}' });return false"><img src="./images/icons/refresh.png"/></a></span>
             </div>
             <div class="url-container">
                 <input id="url-bar-${browserNumber}" class="url-bar" type="text" placeholder="http://google.com" value="${url}">
-                <button id="url-button" onclick="addNewURL(document.getElementById('url-bar-${browserNumber}').value)"> -GO- </button>
+                <button 
+                id="url-button" 
+                class="url-button"
+                onclick="
+                    window.postMessage({ 
+                        visitURL:{ 
+                            url:document.getElementById('url-bar-${browserNumber}').value, 
+                            targetBrowser:'${browserNumber}' 
+                        } })"> 
+                         GO  
+                </button>
             </div>
             <span class="button" class="settings-button"><a onclick="console.log('settings')"><img src="./images/icons/settings.png"></a></span>
         </div>
@@ -56,14 +74,28 @@ const launchBrowser = (url) =>{
     browserContainer.addEventListener("keypress", pressEnterSubmit)
     
     window.addEventListener("message", (event)=>{
+        console.log('Message', event)
         const message = event.data
         if(message.back){
-            if(message.back == `browser-${browserNumber}`)
-                back()
-        }else if(message.forward){
-            if(message.forward == `browser-${browserNumber}`)
-                forward()
             
+            if(message.back == `browser-${browserNumber}`){
+                webview.goBack()
+            }
+        }else if(message.forward){
+            
+            if(message.forward == `browser-${browserNumber}`){
+                webview.goForward()
+            }
+            
+        }else if(message.refresh){
+            
+            if(message.refresh == `browser-${browserNumber}`){
+                webview.reload()
+            }
+            
+        }else if(message.visitURL){
+            const { url, targetBrowser } = message.visitURL
+            addNewURL(url)
         }
     })
 
@@ -103,11 +135,16 @@ const launchBrowser = (url) =>{
                 setURL(url)
             })
 
+            // webview.getWebContents().session.on('will-download', (evt, item) => {
+            //     console.log('Webview event', evt)
+            //     console.log('Webview download item', item)
+            // })
+
         }else{
             //iframe tag
             webview.onload = () =>{
                 url = webview.src
-                
+
                 addUrlToHistory(url)
                 setURL(url)
             }
@@ -185,12 +222,59 @@ const launchBrowser = (url) =>{
         width:"80%", 
         title:"Browser", 
         mount:browserContainer, 
+        launcher:{
+            //enables start at boot
+            name:"launcherBrowser",
+            params:[url]
+        },
         onclose:()=>{
             browserView.innerHTML = oldState
             browserContainer.removeEventListener("keypress", pressEnterSubmit)
         } 
     })
+
+    activeWebviews[browserNumber] = browserWindow
     startPageWatcher()
+
+    const downloadCompleteHandler = (event, message)=>{
+        const { success, error } = message
+        if(success) popup(`Success: ${JSON.stringify(success, null, 2)}`)
+        else if(error) popup(`Error: ${JSON.stringify(error, null, 2)}`)
+    }
+
+    const confirmDownloadHandler = (url)=>{
+        confirmation({
+            message:"Are you sure you want to download this file?",
+            yes:()=>{
+                window.ipcRenderer.send('download-confirmed', true)
+            },
+            no:()=>{
+                window.ipcRenderer.send('download-confirmed', false)
+            }
+        })
+    }
+
+    const selectDownloadPathHandler = (event, message)=>{
+        const startingPath = message
+
+        new SaveAsDialog({
+            startingPath:startingPath,
+            filename:""
+        })
+
+    }
+
+    window.ipcRenderer.on('confirm-download', confirmDownloadHandler)
+    window.ipcRenderer.on('select-download-path', selectDownloadPathHandler)
+    window.ipcRenderer.on('download-complete', downloadCompleteHandler)
+    window.addEventListener('message', (event)=>{
+        const message = event.data
+        if(message.dialogSave){
+            window.ipcRenderer.send('download-path-selected',{ selected:message.dialogSave })
+        }else if(message.dialogCancel){
+            window.ipcRenderer.send('download-path-selected',{ cancelled:true })
+        }
+    })
     
 }
 

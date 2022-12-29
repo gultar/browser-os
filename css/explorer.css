@@ -1,6 +1,10 @@
 @import url("./variables.css");
+@import url("./external/jquery-ui.min.css");
+@import url("./external/jquery-ui.structure.min.css");
+@import url("./external/jquery-ui.theme.min.css");
+@import url("./external/jquery.contextMenu.min.css");
 
-#file-explorer-wrapper{
+.file-explorer-wrapper{
     background-color: rgb(57, 64, 71);
     max-width:100%;
     height:100%;
@@ -11,13 +15,13 @@
     overflow: scroll;
 }
 
-#explorer-window-container{
+.explorer-window-container{
     display:block;
     width:100%;
-    margin-top:6vh;
+    margin-top:5vh;
 }
 
-#explorer-window{
+.explorer-window{
     margin-top:0;
     width:100%;
     height:95%;
@@ -25,42 +29,45 @@
     justify-content: flex-start;
 }
 
-#navigation-bar-container{
+.navigation-bar-container{
     display: flex;
-    width: 95%;
-    margin-top: 1vh;
+    width: 85%;
+    position: fixed;
+    top:0;
+    left:30px;
+    margin-top:4px;
 }
 
-#navigation-bar-container input{
+.navigation-bar-container input{
     display:inline-block;
     width:80%;
     margin-left: 5vh;
     margin-right: 5vh;
 }
 
-#side-bar{
+.side-bar{
     padding: 0;
     width:25%;
     min-width: 15%;
-    height: 95%;
+    min-height: 100%;
     margin:2vh;
     display:block;
-    background-color: darkgray !important;
+    background-color: var(--background) !important;
     resize: horizontal;
     scroll-behavior: smooth;
     overflow: scroll;
 }
 
-#side-bar ul{
+.side-bar ul{
     margin: 0;
     padding: 2vh;
 }
 
-#side-bar ul li{
+.side-bar ul li{
     list-style: none;
 }
 
-#quick-access-title{
+.quick-access-title{
     margin-top:5px;
     display:block;
     width:100%;
@@ -80,7 +87,6 @@
 .file-menu {
     display: block;
     transition-duration: 0.5s;
-    background: transparent !important;
 }
 
 .menu-item{
@@ -89,6 +95,8 @@
 
 .hoverable:hover {
     cursor: pointer;
+    text-decoration: underline;
+    color:blue;
 }
 
 .explorer-item:hover{
@@ -96,14 +104,15 @@
     color:blue;
 }
 
-#explorer{
+.explorer{
     min-width: 40%;
     width:75%;
     display: grid;
     grid-template-columns: repeat(var(--number-of-explorer-items), var(--size-of-item));
-    grid-auto-rows: var(--height-of-item)
-    
+    grid-auto-rows: var(--height-of-item);
 }
+
+
 
 .explorer-item-wrapper{
     display: flex;
@@ -126,11 +135,22 @@
 
 .explorer-icon{
     display:block;
+    height:40px;
+    width:40px;
 }
 
-#explorer {
+.explorer {
     margin:2vh 2vh;
 }
+
+.folder-view-explorer{
+    resize: none !important;
+}
+
+.hidden{
+    visibility: hidden;
+}
+
 
 @container (max-width : 1000px)  {
     *{
