@@ -8,11 +8,23 @@ const initScript = async () =>{
     initDesktop()
     loadWindowState()
     startWindowStateRoutine()
-    
-    
-    setTimeout(()=>{
-        startHyperwatcher()
-    }, 5000)
+    makeMockIpcRenderer()
+}
+
+const makeMockIpcRenderer = () =>{
+  //If it is runned from a simple http server, without Electron, make
+  //a mock version based on event emitters to still enable communication to take place
+  
+  if(!window.ipcRenderer){
+    window.ipcRenderer = {
+      send:(eventType, payload)=>{
+        window.sendEvent(eventType, payload)
+      },
+      on:(eventType, callback, ...opts)=>{
+        window.addEventListener(eventType, callback, ...opts)
+      }
+    }
+  }
 }
 
 const getServerConfig = async () =>{
@@ -46,8 +58,4 @@ const startWindowStateRoutine = () =>{
     saveWindowState()
   }, 1*1000)
 }
-
-
-
-initScript()
 

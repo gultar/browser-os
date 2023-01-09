@@ -1,17 +1,15 @@
 (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
-const parenter = require('./proxy')
 const File = require('./file')
+const Directory = require('./directory')
 
 class DirectoryPointer{
     constructor(root, persistance){
-        if(!root){
-            root = new Proxy({}, parenter)
-            root["/"] = {}
-        }
+        if(!root) throw new Error('Need to provide root value to directory pointer')
         this.rootDir = root
         this.workingDir = root
-        this.persistance = persistance
-
+        this.persistance = this.clonePersistanceInstance(persistance)
+        this.persistance.pwd = ()=> this.pwd()
+        this.lastUsed = Date.now()
     }
 
     exposeExternalCommands(){
@@ -23,6 +21,7 @@ class DirectoryPointer{
             rmdir:this.rmdir,
             mkdir:this.mkdir,
             touch:this.touch,
+            whereis:this.whereis,
             createVirtualFile:this.createVirtualFile,
             cat:this.cat,
             cp:this.cp,
@@ -47,6 +46,10 @@ class DirectoryPointer{
         }
     }
 
+    clonePersistanceInstance(persistance){
+        return Object.assign(Object.create(Object.getPrototypeOf(persistance)), persistance)
+    }
+
     root(){
         return this.rootDir
     }
@@ -63,8 +66,9 @@ class DirectoryPointer{
         if(path === "") path = this.workingDir.name
         if(path === "/") return this.root()
         if(path === ".." && this.isRootDir(this.workingDir)) return this.workingDir
-        if(path === ".") return this.workingDir        
-
+        if(path === ".") return this.workingDir  
+        
+        // if(path[0] === ".") path.slice(0,1)
 
         const isDirectChild = this.workingDir[path]
         if(isDirectChild) return this.workingDir[path]
@@ -108,8 +112,11 @@ class DirectoryPointer{
             }
             
             const newWorkingDirectory = this.findDir(path)
+            
             if(this.isDir(newWorkingDirectory)){
                 this.workingDir = newWorkingDirectory
+            }else{
+                console.log('cd: new dir is not a dir', newWorkingDirectory)
             }
 
             this.persistance.cd(this.pwd())
@@ -124,7 +131,7 @@ class DirectoryPointer{
 
     pwd(){
         let path = this.getAbsolutePath(this.workingDir)
-        path = path.unshift("/")
+        path = "/" + path
         return path
     }
 
@@ -150,16 +157,18 @@ class DirectoryPointer{
             contents = (directory ? directory.getContentNames() : [])
         }
         
+        // console.log(this.workingDir)
         return contents
     }
 
-    mkdir(path, contents=[]){
+    async mkdir(path, dirToCopy=false){
         if(path === undefined) throw new Error('touch: missing file operand')
         
         const pathArray = this.fromPathToArray(path)
         const dirname = pathArray[pathArray.length - 1]
         const isWithinThisDir = pathArray.length == 1
-        
+        let targetDirectory = ""
+
         const nameValidator = /^(\w+\.?)*\w+$/
         if(nameValidator.test(dirname) === false){
             throw new Error('Directory name can only contain alphanumerical characters')
@@ -168,23 +177,60 @@ class DirectoryPointer{
         if(isWithinThisDir){
             const exists = this.workingDir.hasDir(dirname)
             if(exists) throw new Error(`mkdir: directory ${dirname} already exists`)
-            this.workingDir[dirname] = new Proxy({}, parenter)
+            
+            if(dirToCopy){
+                const structure = await this.buildStructure(dirToCopy)
+                this.workingDir[dirname] = new Directory(dirname, this.workingDir, dirToCopy.contents)
+                
+                this.setDirectoryContent(this.workingDir[dirname], dirToCopy)
+                
+            }else{
+                this.workingDir[dirname] = new Directory(dirname, this.workingDir)//new Proxy({}, parenter)
+            }
 
         }else{
             pathArray.pop()
             const pathToFile = this.fromArrayToPath(pathArray) 
-            const targetDirectory = this.findDir(pathToFile)
+            targetDirectory = this.findDir(pathToFile)
             
             const exists = targetDirectory[dirname]
             if(exists) throw new Error(`mkdir: directory ${dirname} already exists`)
 
-            targetDirectory[dirname] = new Proxy({}, parenter)
+            if(dirToCopy){
+                const structure = await this.buildStructure(dirToCopy)
+                targetDirectory[dirname] = new Directory(dirname, targetDirectory, dirToCopy.contents)
+                
+                this.setDirectoryContent(targetDirectory[dirname], structure)
+
+            }else{
+                targetDirectory[dirname] = new Directory(dirname, targetDirectory)
+            }
+            
         }
+
 
         this.persistance.mkdir(path)
 
         return true
     }
+
+
+    async buildStructure(sourceDir, structure={}){
+        // yield sourceDir
+        for await(let dirname of sourceDir.getDirnames()) {
+            if(dirname !== '..'){
+                let child = sourceDir[dirname]
+                structure[dirname] = {
+                    contents:child.contents
+                }
+
+                await this.buildStructure(child, structure[dirname]);
+            }
+        }
+
+        return structure
+    }
+
 
     async cat(path){
         if(path === undefined) throw new Error('cat: missing file operand')
@@ -230,6 +276,23 @@ class DirectoryPointer{
         return true
     }
 
+    async whereis(name){
+        let possibilities = []
+        for await(const directory of this.walk()){
+            if(directory.name === name){
+                const pathArray = this.walkBackToRootDir(directory)
+                const path = pathArray.join("/")
+                possibilities.push(path+"/")
+            }else if(directory.hasFile(name) === true){
+                const pathArray = this.walkBackToRootDir(directory)
+                const path = pathArray.join("/")
+                possibilities.push(path+"/"+name)
+            }
+        }
+
+        return possibilities
+    }
+
     createVirtualFile(filePath, content=""){
         if(filePath === undefined) throw new Error('touch: missing file operand')
         
@@ -254,21 +317,22 @@ class DirectoryPointer{
     }
 
     async cp(pathFrom, pathTo){
-        let copied = false
         if(!pathFrom) throw new Error('Need to provide origin path of file to copy')
         if(!pathTo) throw new Error('Need to provide destination path of file to copy')
-
+        let copied = false
         const found = this.search(pathFrom)
         if(!found) throw new Error(`Could not find file ${pathFrom}`)
 
         const { file, directory } = found
         if(!file && directory){
-            //throw new Error(`-r not specified; omitting directory ${pathFrom}`)
-            copied = this.mkdir(pathTo)
+            const sourceDir = this.findDir(pathFrom)
+
+            copied = this.mkdir(pathTo, sourceDir)
+            
         }else if(file && !directory){
-            let content = await this.getFileContent(pathFrom)
-            if(!content) content = " "
+            const content = await this.getFileContent(pathFrom)
             copied = this.touch(pathTo, content)
+            
         }
 
         this.persistance.cp(pathFrom, pathTo)
@@ -565,6 +629,18 @@ class DirectoryPointer{
         }
     }
 
+    setDirectoryContent(directory, structureEntry){
+        console.log('Directory', directory.name)
+        console.log('Structure Entry', structureEntry)
+        for (const prop of Object.keys(structureEntry)){
+            if(typeof structureEntry[prop] == "object" && prop !== 'contents' && prop !== ".."){
+                directory[prop] = new Directory(prop, directory, structureEntry[prop].contents)
+                this.setDirectoryContent(directory[prop], structureEntry[prop])
+            }
+        }
+        return true
+    }
+
     *walk(currentDir=this.root()) {
         yield currentDir
         for (let dirname of currentDir.getDirnames()) {
@@ -578,15 +654,15 @@ class DirectoryPointer{
 
 module.exports = DirectoryPointer
 
-},{"./file":3,"./proxy":6}],2:[function(require,module,exports){
+},{"./directory":2,"./file":3}],2:[function(require,module,exports){
 class Directory{
     
-    constructor(name, parent){
+    constructor(name, parent, contents=[], permissions=""){
         this[".."] = parent
         this.name = name
-        this.contents = []
+        this.contents = contents
         this.isDirectory = true
-        this.permissions = "" //to be implemented
+        this.permissions = permissions //to be implemented
     }
 
     getDirectoryProperties(){
@@ -746,10 +822,13 @@ class File{
     }
 }
 
+window.File = File
+
 module.exports = File
 },{}],4:[function(require,module,exports){
 const saveState = () =>{
   const exported = FileSystem.export()
+  console.log('Exported', exported)
   return localStorage.setItem("filesystem", exported)
 }
 
@@ -770,8 +849,9 @@ const init = () =>{
   const VirtualFileSystem = require('./virtualfilesystem')
   const persistance = require('./localstorage-persistance')
   FileSystem = new VirtualFileSystem("guest",persistance) //ADD FSBACKUP
+
   FileSystem.import(fsBackup)
-  window.Filesystem = FileSystem
+  window.FileSystem = FileSystem
 
   document.addEventListener('visibilitychange', function() {
       saveState()
@@ -781,13 +861,21 @@ const init = () =>{
 window.addEventListener("load", (event) => {
   console.log("page is fully loaded");
   init()
+  initScript()
 });
 
 window.saveState = saveState
 },{"./localstorage-persistance":5,"./virtualfilesystem":8}],5:[function(require,module,exports){
+
+const resolvePath = (path) => {
+    return path.replace("//","/")
+}
+
 let persistanceInterface = {
+    isInterface:true,
     touch:(filename, content)=>{
         if(typeof localStorage !== 'undefined'){
+            filename = resolvePath(filename)
             localStorage.setItem(filename, JSON.stringify({
                 name:filename,
                 content:content,
@@ -796,34 +884,55 @@ let persistanceInterface = {
     },
     mkdir:()=>{},
     rmdir:()=>{},
-    rm:()=>{},
+    rm:(filename)=>{
+        filename = resolvePath(filename)
+        localStorage.removeItem(filename)
+    },
     editFile:(filename, newContent)=>{
         if(typeof localStorage !== 'undefined'){
+            filename = resolvePath(filename)
             const fileString = localStorage.getItem(filename)
-            const file = JSON.parse(fileString)
-            file.content = newContent
-            localStorage.setItem(filename, JSON.stringify(file))
+            if(fileString && fileString !== null){
+                const file = JSON.parse(fileString)
+                file.content = newContent
+                localStorage.setItem(filename, JSON.stringify(file))
+            }else{
+                const file = new window.File(filename, newContent)
+                localStorage.setItem(filename, JSON.stringify(file))
+            }
+
+            return true
         }
     },
     cp:(pathFrom, pathTo)=>{
+
         if(typeof localStorage !== 'undefined'){
+            pathFrom = resolvePath(pathFrom)
+            pathTo = resolvePath(pathTo)
             const fileString = localStorage.getItem(pathFrom)
             localStorage.setItem(pathTo, fileString)
         }
     },
     mv:(pathFrom, pathTo)=>{
+ 
         if(typeof localStorage !== 'undefined'){
+            pathFrom = resolvePath(pathFrom)
+            pathTo = resolvePath(pathTo)
             const fileString = localStorage.getItem(pathFrom)
             localStorage.setItem(pathTo, fileString)
             localStorage.removeItem(pathFrom)
         }
     },
     cd:()=>{},
-    resolvePath:(path)=>{return path},
-    getFile:()=>{
+    resolvePath:(path)=>{
+        return path.replace("//","/")
+    },
+    getFile:(path)=>{
+        
         if(typeof localStorage !== 'undefined'){
+            path = resolvePath(path)
             const fileString = localStorage.getItem(path)
-            if(!fileString) return false 
+            if(!fileString || fileString == null) return false 
             
             const file = JSON.parse(fileString)
             return file
@@ -831,9 +940,12 @@ let persistanceInterface = {
     },
     getFileContent:(path)=>{
         if(typeof localStorage !== 'undefined'){
+            path = resolvePath(path)
             const fileString = localStorage.getItem(path)
-            if(!fileString) return false 
+            if(!fileString || fileString == null) return false 
             
+            console.log('Get File Content', fileString)
+
             const file = JSON.parse(fileString)
             return file.content
         }
@@ -900,31 +1012,43 @@ module.exports = { stringify }
 const { stringify } = require('./utils')
 const parenter = require('./proxy')
 const File = require('./file')
+const Directory = require('./directory')
 const DirectoryPointer = require('./directory-pointer')
 
 class VirtualFileSystem{
     constructor(username, persistance=persistanceInterface, basePath="."){
-        //All objects will be treated like potential directories
+        
         this.username = username
-        this.filesystem = new Proxy({}, parenter)
-        this.filesystem["/"] = (!persistance.isInterface ? {} : {
-            home:{
-                desktop:{},
-                documents:{},
-                downloads:{},
-                applications:{},
-                images:{}
-            },
-            sys:{
-                settings:{}
-            },
-        })
+        this.filesystem = {}
+        this.filesystem["/"] = new Directory("/", this.filesystem["/"])
+        
+        if(persistance.isInterface){
+            this.filesystem["/"].home = new Directory("home", this.filesystem["/"])
+            this.filesystem["/"].sys = new Directory("sys", this.filesystem["/"])
+            
+            this.home = this.filesystem["/"].home
+            this.sys = this.filesystem["/"].sys
+    
+            
+            this.home.desktop = new Directory("desktop", this.home)
+            this.home.documents = new Directory("documents", this.home)
+            this.home.downloads = new Directory("downloads", this.home)
+            this.home.applications = new Directory("applications", this.home)
+            this.home.images = new Directory("images", this.home)
+            this.sys.settings = new Directory("settings", this.sys)
+        }
+
         this.workingDir = this.filesystem["/"] 
         this.persistance = persistance
         this.basePath = basePath
         this.pointerPool = {}
+        
         this.mainPointer = new DirectoryPointer(this.filesystem["/"], this.persistance)
         this.initMainPointer()
+    }
+
+    wd(){
+        return this.mainPointer.workingDir
     }
 
     exposeCommands(){
@@ -966,8 +1090,8 @@ class VirtualFileSystem{
         return this.filesystem["/"]
     }
 
-    createPointer(){
-        const id = Date.now()
+    createPointer(id){
+        if(!id) id = Date.now()
         this.pointerPool[id] = new DirectoryPointer(this.root(), this.persistance)
 
         this.pointerPool[id].id = id
@@ -983,14 +1107,46 @@ class VirtualFileSystem{
         delete this.pointerPool[id]
     }
 
+    deleteAllPointers(){
+        this.pointerPool = {}
+    }
+
+    startPointerCleaningRoutine(){
+        setInterval(()=>{
+            for(const id in this.pointerPool){
+                const pointer = this.pointerPool[id]
+
+                if(pointer.lastUsed + (60 * 1000) < Date.now()){
+                    delete this.pointerPool[id]
+                }
+            }
+        }, 10*1000)
+    }
+
     setDirectoryContent(directory, structureEntry){
         for(const prop in structureEntry){
             if(!Array.isArray(structureEntry[prop]) && typeof structureEntry[prop] == "object"){
-                directory[prop] = structureEntry[prop]
+                directory[prop] = new Directory(prop, directory, structureEntry[prop].contents)
                 this.setDirectoryContent(directory[prop], structureEntry[prop])
             }
+            
         }
         return true
+    }
+
+    fromPathToArray(path){
+        let arrayOfDirectories = path.split("/")
+        arrayOfDirectories = arrayOfDirectories.filter(cell => cell != "")
+        return arrayOfDirectories
+    }
+
+    fromArrayToPath(arrayOfDirectories){
+        const path = this.convertToPathString(arrayOfDirectories)
+        return path
+    }
+
+    convertToPathString(directoriesArray){
+        return Array.isArray(directoriesArray) ? directoriesArray.join("/") : ""
     }
 
     import(structure){
@@ -1008,4 +1164,4 @@ module.exports = VirtualFileSystem
 
 
 
-},{"./directory-pointer":1,"./file":3,"./proxy":6,"./utils":7}]},{},[4]);
+},{"./directory":2,"./directory-pointer":1,"./file":3,"./proxy":6,"./utils":7}]},{},[4]);
