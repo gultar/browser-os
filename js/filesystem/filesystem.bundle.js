@@ -868,6 +868,8 @@ window.saveState = saveState
 },{"./localstorage-persistance":5,"./virtualfilesystem":8}],5:[function(require,module,exports){
 
 const resolvePath = (path) => {
+    if(!path || path == null) return path
+
     return path.replace("//","/")
 }
 
