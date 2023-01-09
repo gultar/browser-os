@@ -871,8 +871,7 @@ const resolvePath = (path) => {
     if(!path || path == null) return path
 
     path = "/" + path
-
-    return path.replace("//","/")
+    return removeDoubleSlash(path)
 }
 
 let persistanceInterface = {
@@ -892,11 +891,11 @@ let persistanceInterface = {
         filename = resolvePath(filename)
         localStorage.removeItem(filename)
     },
-    editFile:(filename, newContent)=>{
+    editFile:(filename, newContent="")=>{
         if(typeof localStorage !== 'undefined'){
             filename = resolvePath(filename)
             const fileString = localStorage.getItem(filename)
-            if(fileString && fileString !== null){
+            if(fileString && fileString !== null && fileString !== 'null'){
                 const file = JSON.parse(fileString)
                 file.content = newContent
                 localStorage.setItem(filename, JSON.stringify(file))
@@ -947,9 +946,12 @@ let persistanceInterface = {
         if(typeof localStorage !== 'undefined'){
             path = resolvePath(path)
             const fileString = localStorage.getItem(path)
-            if(!fileString || fileString == null) return false 
+            if(!fileString) return false 
             
+            if(fileString == 'null') return false
+
             console.log('Get File Content', fileString)
+            console.log('Get File Content', typeof fileString)
 
             const file = JSON.parse(fileString)
             return file.content

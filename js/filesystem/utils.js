@@ -30,5 +30,9 @@ function serializer(replacer, cycleReplacer) {
     }
 }
 
+const removeDoubleSlash = (path) =>{
+  return path.replace(/\/\//g, '/')
+}
 
-module.exports = { stringify }
+
+module.exports = { stringify, removeDoubleSlash }
