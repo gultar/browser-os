@@ -45,8 +45,9 @@ body{
     color:#48F2E3;
     position:fixed;
     top:34%;
-    left:43%;
+    left:42%;
     box-shadow: 0 3px 10px rgb(0 0 0 / 0.7);
+    z-index: 10;
 }
 
 #exit-options{
@@ -72,6 +73,14 @@ body{
     height:30px;
     border-radius: 2px;
     box-shadow: 0 3px 5px rgb(0 0 0 / 0.7);
+}
+
+#username{
+    width:150px;
+}
+
+#password{
+    width:150px;
 }
 
 @keyframes gradient {
@@ -113,3 +122,4 @@ body{
         left:20%;
     }
 }
+

@@ -25,6 +25,10 @@ body{
   z-index:0;
 }
 
+#editor-container{
+    display:none;
+}
+
 #page-wrapper{
   height:100%;
   width:100%;
@@ -50,15 +54,15 @@ body{
 
 
 #logo-container{
-  display:block;
   padding:20px;
   background: rgba(0, 0, 0, 0.6);
   box-shadow: 0 0 0 4px rgba(45, 52, 63, 0.5);
   border-radius: 50%;
   position:fixed;
-  top:40%;
-  left:43%;
+  top:43%;
+  left:44%;
   z-index: 0;
+  justify-content: center;
 }
 
 
@@ -98,6 +102,7 @@ body{
 .desktop-icon{
   display:block;
   margin:10px;
+  padding:5px;
 }
 
 #desktop-logo{
@@ -114,24 +119,38 @@ body{
 
 #icon-container{
   padding:5vh 2vh;
-  /* display:grid;
+  /* display:flex;
+  flex-direction:row; */
+  display:grid;
   grid-template-columns: repeat(auto-fill, var(--size-of-desktop-icon-slot));
-  grid-template-rows: repeat(auto-fill, var(--size-of-desktop-icon-slot)); */
+  grid-template-rows: repeat(auto-fill, var(--size-of-desktop-icon-slot)); 
+  width:100%;
   list-style: none;
   background-color: transparent;
   position:fixed;
+  text-align: center;
+  font-size:9pt !important;
+  flex-wrap: wrap;
 }
 
 
 .desktop-icon{
   height:var(--size-of-desktop-icons);
   width:var(--size-of-desktop-icons);
-  /* background-color: aqua; */
+  text-align: center;
+}
+
+.desktop-icon:hover{
+    cursor:pointer;
 }
 
 .desktop-icon-link{
   display:flex;
   flex-direction:column;
+}
+
+.desktop-icon-link span{
+    
 }
 
 .placeholder{

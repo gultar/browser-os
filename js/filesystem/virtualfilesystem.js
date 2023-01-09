@@ -1,31 +1,43 @@
 const { stringify } = require('./utils')
 const parenter = require('./proxy')
 const File = require('./file')
+const Directory = require('./directory')
 const DirectoryPointer = require('./directory-pointer')
 
 class VirtualFileSystem{
     constructor(username, persistance=persistanceInterface, basePath="."){
-        //All objects will be treated like potential directories
+        
         this.username = username
-        this.filesystem = new Proxy({}, parenter)
-        this.filesystem["/"] = (!persistance.isInterface ? {} : {
-            home:{
-                desktop:{},
-                documents:{},
-                downloads:{},
-                applications:{},
-                images:{}
-            },
-            sys:{
-                settings:{}
-            },
-        })
+        this.filesystem = {}
+        this.filesystem["/"] = new Directory("/", this.filesystem["/"])
+        
+        if(persistance.isInterface){
+            this.filesystem["/"].home = new Directory("home", this.filesystem["/"])
+            this.filesystem["/"].sys = new Directory("sys", this.filesystem["/"])
+            
+            this.home = this.filesystem["/"].home
+            this.sys = this.filesystem["/"].sys
+    
+            
+            this.home.desktop = new Directory("desktop", this.home)
+            this.home.documents = new Directory("documents", this.home)
+            this.home.downloads = new Directory("downloads", this.home)
+            this.home.applications = new Directory("applications", this.home)
+            this.home.images = new Directory("images", this.home)
+            this.sys.settings = new Directory("settings", this.sys)
+        }
+
         this.workingDir = this.filesystem["/"] 
         this.persistance = persistance
         this.basePath = basePath
         this.pointerPool = {}
+        
         this.mainPointer = new DirectoryPointer(this.filesystem["/"], this.persistance)
         this.initMainPointer()
+    }
+
+    wd(){
+        return this.mainPointer.workingDir
     }
 
     exposeCommands(){
@@ -67,8 +79,8 @@ class VirtualFileSystem{
         return this.filesystem["/"]
     }
 
-    createPointer(){
-        const id = Date.now()
+    createPointer(id){
+        if(!id) id = Date.now()
         this.pointerPool[id] = new DirectoryPointer(this.root(), this.persistance)
 
         this.pointerPool[id].id = id
@@ -84,14 +96,46 @@ class VirtualFileSystem{
         delete this.pointerPool[id]
     }
 
+    deleteAllPointers(){
+        this.pointerPool = {}
+    }
+
+    startPointerCleaningRoutine(){
+        setInterval(()=>{
+            for(const id in this.pointerPool){
+                const pointer = this.pointerPool[id]
+
+                if(pointer.lastUsed + (60 * 1000) < Date.now()){
+                    delete this.pointerPool[id]
+                }
+            }
+        }, 10*1000)
+    }
+
     setDirectoryContent(directory, structureEntry){
         for(const prop in structureEntry){
             if(!Array.isArray(structureEntry[prop]) && typeof structureEntry[prop] == "object"){
-                directory[prop] = structureEntry[prop]
+                directory[prop] = new Directory(prop, directory, structureEntry[prop].contents)
                 this.setDirectoryContent(directory[prop], structureEntry[prop])
             }
+            
         }
         return true
+    }
+
+    fromPathToArray(path){
+        let arrayOfDirectories = path.split("/")
+        arrayOfDirectories = arrayOfDirectories.filter(cell => cell != "")
+        return arrayOfDirectories
+    }
+
+    fromArrayToPath(arrayOfDirectories){
+        const path = this.convertToPathString(arrayOfDirectories)
+        return path
+    }
+
+    convertToPathString(directoriesArray){
+        return Array.isArray(directoriesArray) ? directoriesArray.join("/") : ""
     }
 
     import(structure){

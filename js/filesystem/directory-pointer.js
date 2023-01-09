@@ -1,16 +1,14 @@
-const parenter = require('./proxy')
 const File = require('./file')
+const Directory = require('./directory')
 
 class DirectoryPointer{
     constructor(root, persistance){
-        if(!root){
-            root = new Proxy({}, parenter)
-            root["/"] = {}
-        }
+        if(!root) throw new Error('Need to provide root value to directory pointer')
         this.rootDir = root
         this.workingDir = root
-        this.persistance = persistance
-
+        this.persistance = this.clonePersistanceInstance(persistance)
+        this.persistance.pwd = ()=> this.pwd()
+        this.lastUsed = Date.now()
     }
 
     exposeExternalCommands(){
@@ -22,6 +20,7 @@ class DirectoryPointer{
             rmdir:this.rmdir,
             mkdir:this.mkdir,
             touch:this.touch,
+            whereis:this.whereis,
             createVirtualFile:this.createVirtualFile,
             cat:this.cat,
             cp:this.cp,
@@ -46,6 +45,10 @@ class DirectoryPointer{
         }
     }
 
+    clonePersistanceInstance(persistance){
+        return Object.assign(Object.create(Object.getPrototypeOf(persistance)), persistance)
+    }
+
     root(){
         return this.rootDir
     }
@@ -62,8 +65,9 @@ class DirectoryPointer{
         if(path === "") path = this.workingDir.name
         if(path === "/") return this.root()
         if(path === ".." && this.isRootDir(this.workingDir)) return this.workingDir
-        if(path === ".") return this.workingDir        
-
+        if(path === ".") return this.workingDir  
+        
+        // if(path[0] === ".") path.slice(0,1)
 
         const isDirectChild = this.workingDir[path]
         if(isDirectChild) return this.workingDir[path]
@@ -107,8 +111,11 @@ class DirectoryPointer{
             }
             
             const newWorkingDirectory = this.findDir(path)
+            
             if(this.isDir(newWorkingDirectory)){
                 this.workingDir = newWorkingDirectory
+            }else{
+                console.log('cd: new dir is not a dir', newWorkingDirectory)
             }
 
             this.persistance.cd(this.pwd())
@@ -123,7 +130,7 @@ class DirectoryPointer{
 
     pwd(){
         let path = this.getAbsolutePath(this.workingDir)
-        path = path.unshift("/")
+        path = "/" + path
         return path
     }
 
@@ -149,16 +156,18 @@ class DirectoryPointer{
             contents = (directory ? directory.getContentNames() : [])
         }
         
+        // console.log(this.workingDir)
         return contents
     }
 
-    mkdir(path, contents=[]){
+    async mkdir(path, dirToCopy=false){
         if(path === undefined) throw new Error('touch: missing file operand')
         
         const pathArray = this.fromPathToArray(path)
         const dirname = pathArray[pathArray.length - 1]
         const isWithinThisDir = pathArray.length == 1
-        
+        let targetDirectory = ""
+
         const nameValidator = /^(\w+\.?)*\w+$/
         if(nameValidator.test(dirname) === false){
             throw new Error('Directory name can only contain alphanumerical characters')
@@ -167,23 +176,60 @@ class DirectoryPointer{
         if(isWithinThisDir){
             const exists = this.workingDir.hasDir(dirname)
             if(exists) throw new Error(`mkdir: directory ${dirname} already exists`)
-            this.workingDir[dirname] = new Proxy({}, parenter)
+            
+            if(dirToCopy){
+                const structure = await this.buildStructure(dirToCopy)
+                this.workingDir[dirname] = new Directory(dirname, this.workingDir, dirToCopy.contents)
+                
+                this.setDirectoryContent(this.workingDir[dirname], dirToCopy)
+                
+            }else{
+                this.workingDir[dirname] = new Directory(dirname, this.workingDir)//new Proxy({}, parenter)
+            }
 
         }else{
             pathArray.pop()
             const pathToFile = this.fromArrayToPath(pathArray) 
-            const targetDirectory = this.findDir(pathToFile)
+            targetDirectory = this.findDir(pathToFile)
             
             const exists = targetDirectory[dirname]
             if(exists) throw new Error(`mkdir: directory ${dirname} already exists`)
 
-            targetDirectory[dirname] = new Proxy({}, parenter)
+            if(dirToCopy){
+                const structure = await this.buildStructure(dirToCopy)
+                targetDirectory[dirname] = new Directory(dirname, targetDirectory, dirToCopy.contents)
+                
+                this.setDirectoryContent(targetDirectory[dirname], structure)
+
+            }else{
+                targetDirectory[dirname] = new Directory(dirname, targetDirectory)
+            }
+            
         }
+
 
         this.persistance.mkdir(path)
 
         return true
     }
+
+
+    async buildStructure(sourceDir, structure={}){
+        // yield sourceDir
+        for await(let dirname of sourceDir.getDirnames()) {
+            if(dirname !== '..'){
+                let child = sourceDir[dirname]
+                structure[dirname] = {
+                    contents:child.contents
+                }
+
+                await this.buildStructure(child, structure[dirname]);
+            }
+        }
+
+        return structure
+    }
+
 
     async cat(path){
         if(path === undefined) throw new Error('cat: missing file operand')
@@ -229,6 +275,23 @@ class DirectoryPointer{
         return true
     }
 
+    async whereis(name){
+        let possibilities = []
+        for await(const directory of this.walk()){
+            if(directory.name === name){
+                const pathArray = this.walkBackToRootDir(directory)
+                const path = pathArray.join("/")
+                possibilities.push(path+"/")
+            }else if(directory.hasFile(name) === true){
+                const pathArray = this.walkBackToRootDir(directory)
+                const path = pathArray.join("/")
+                possibilities.push(path+"/"+name)
+            }
+        }
+
+        return possibilities
+    }
+
     createVirtualFile(filePath, content=""){
         if(filePath === undefined) throw new Error('touch: missing file operand')
         
@@ -253,21 +316,22 @@ class DirectoryPointer{
     }
 
     async cp(pathFrom, pathTo){
-        let copied = false
         if(!pathFrom) throw new Error('Need to provide origin path of file to copy')
         if(!pathTo) throw new Error('Need to provide destination path of file to copy')
-
+        let copied = false
         const found = this.search(pathFrom)
         if(!found) throw new Error(`Could not find file ${pathFrom}`)
 
         const { file, directory } = found
         if(!file && directory){
-            //throw new Error(`-r not specified; omitting directory ${pathFrom}`)
-            copied = this.mkdir(pathTo)
+            const sourceDir = this.findDir(pathFrom)
+
+            copied = this.mkdir(pathTo, sourceDir)
+            
         }else if(file && !directory){
-            let content = await this.getFileContent(pathFrom)
-            if(!content) content = " "
+            const content = await this.getFileContent(pathFrom)
             copied = this.touch(pathTo, content)
+            
         }
 
         this.persistance.cp(pathFrom, pathTo)
@@ -562,6 +626,18 @@ class DirectoryPointer{
         }else{
             return path
         }
+    }
+
+    setDirectoryContent(directory, structureEntry){
+        console.log('Directory', directory.name)
+        console.log('Structure Entry', structureEntry)
+        for (const prop of Object.keys(structureEntry)){
+            if(typeof structureEntry[prop] == "object" && prop !== 'contents' && prop !== ".."){
+                directory[prop] = new Directory(prop, directory, structureEntry[prop].contents)
+                this.setDirectoryContent(directory[prop], structureEntry[prop])
+            }
+        }
+        return true
     }
 
     *walk(currentDir=this.root()) {

@@ -6,6 +6,7 @@
 
 .file-explorer-wrapper{
     background-color: rgb(57, 64, 71);
+    /*background:var(--nav-background-color);*/
     max-width:100%;
     height:100%;
     display:flex;
@@ -24,7 +25,7 @@
 .explorer-window{
     margin-top:0;
     width:100%;
-    height:95%;
+    height:100%;
     display:flex;
     justify-content: flex-start;
 }
@@ -52,10 +53,10 @@
     min-height: 100%;
     margin:2vh;
     display:block;
-    background-color: var(--background) !important;
+    background-color: var(--nav-background-color) !important;
+    /*background-color: rgb(57, 64, 71);*/
+    border:1px solid white;
     resize: horizontal;
-    scroll-behavior: smooth;
-    overflow: scroll;
 }
 
 .side-bar ul{
@@ -107,9 +108,15 @@
 .explorer{
     min-width: 40%;
     width:75%;
+    min-height: 100%;
+    height:100%;
     display: grid;
     grid-template-columns: repeat(var(--number-of-explorer-items), var(--size-of-item));
     grid-auto-rows: var(--height-of-item);
+    border:1px solid white;
+    background:var(--nav-background-color);
+    /*background-color: rgb(57, 64, 71);*/
+    margin-left:-2vh !important;
 }
 
 
@@ -145,6 +152,12 @@
 
 .folder-view-explorer{
     resize: none !important;
+    height:100%;
+    display:flex;
+}
+
+.folder-view-explorer .directory-content {
+    margin-top:0 !important;
 }
 
 .hidden{

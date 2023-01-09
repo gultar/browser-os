@@ -28,18 +28,27 @@ class Terminal{
         "ls":'List information about the FILEs (the current directory by default). Usage: ls directory/',
         "rm":'Removes specified file. By default, it does not remove directories. . Usage: rm filename',
         "cd":"Change the working directory of the shell environment. Usage: cd dir1/",
+        "cp":"Copies file or entire directory to selected path. Usage: cp src/ target/",
+        "mv":"Moves file or entire directory to selected path. Usage: mv src/ target/",
         "pwd":"Print the name of current working directory",
         "cat":"Concatenate FILE(s) to standard output. Usage: cat filename",
         "mkdir":"Create the DIRECTORY, if it does not already exist. Usage: mkdir directoryname/",
         "touch":"Creates an empty file if it does not already exist. Usage: touch filename",
         "rmdir":"Remove the DIRECTORY, if it is empty. Usage: rmdir directoryname",
         "whoami":"Displays information concerning host",
+        "whereis":"Search for possible paths for a file or directory name",
         "reboot":"Reboots/refreshes system",
+        "logout":"Closes the current user's session",
         "shutdown":"Shuts down system",
+      },
+      "effect":{
+          "Possible Commands":"effect particles/wave/halo",
+          "effect wave":"Toggles a background color wave effect. Colors are set in variables.css",
+          "effect halo":"Toggles a colored halo around cursor. Usage: effect halo 300 - Default is 200 (px)",
+          "effect particles":"Toggles javascript particles effect in background.",
       },
       "settings":{
         "background":"Changes the background image. Usage: background http://url.url",
-        "effect":"Choose between 'wave', 'halo', and 'particle' and see the result"
       },
       "applications":{
         "browser":"Launches a simple Web browser",
@@ -51,7 +60,18 @@ class Terminal{
         "tirex":"Start the famous tirex game from Google",
         "lofi":"Opens up Lo Fi Girl's Youtube channel",
         "webamp":"Launches a Webamp Music Player window",
-        "editor":"Launches a text editor window"
+        "editor":"Launches a code editor window",
+        "markdown":"Launches a markdown file editor window",
+        "text":"Launches a rich text editor window",
+        "view":"Opens a simple image viewer",
+        "weather":"Displays local weather information",
+        "explorer":"Launches a file explorer window at selected path. Usage: explorer path/",
+      },
+      "wifi":{
+        "Possible Commands":"wifi scan/list/connect/disconnect",
+        "wifi scan":"Scans for available wifi networks and returns them as objects",
+        "wifi list":"Lists active wifi connections",
+        "wifi connect":"Connects to network. Usage: wifi connect --ssid 'NetworkName' --password 'psswrd123' "
       }
     };
 
@@ -82,22 +102,24 @@ class Terminal{
       //Applications
       web:(args)=>this.startBrowser(args),
       browser:(args)=>this.startBrowser(args),
-      wiki:()=>runWeb(["https://wikipedia.org"]),
-      gdt:()=>runWeb(["https://gdt.oqlf.gouv.qc.ca/"]),
-      iching:()=>runWeb(["https://gultar.github.io/iching/"]),//
-      georatio:()=>runWeb(["https://georatio.com/"]),
+      wiki:()=>new Browser("https://wikipedia.org"),
+      gdt:()=>new Browser("https://gdt.oqlf.gouv.qc.ca/"),
+      iching:()=>new Browser("https://gultar.github.io/iching/"),//
+      georatio:()=>new Browser("https://georatio.com/"),
       linguee:(args)=>runLinguee(args),
       tirex:()=>runTirex(),
       map:()=>runMap(),
       lofi:()=>runLofi(),
-      webamp:()=>runWebamp(),
       editor:async (args)=>await this.runEditor(args), //Alias
+      markdown:(args)=>this.runMarkdownEditor(args),
+      text:(args)=>this.runRichTextEditor(args),
       weather:async()=>await this.getWeather(),
       whoami:()=>this.whoami(),
       view:async (args)=>await this.viewImage(args),
       test:async(args)=>await this.testSomething(args),
-      explorer:(args)=>this.runExplorer(args),
-      download:async(args)=>await this.downloadFile(args),
+      explorer:async(args)=>await this.runExplorer(args),
+      wifi:async(args)=>await this.makeWifiCommand(args),
+      hyperwatch:async()=>await toggleHyperWatch(),
     }
   }
   
@@ -150,6 +172,16 @@ class Terminal{
     if(args.length > 0){
       const commandName = args[0]
       let found = false
+      
+      if(this.helpMsgs[commandName]){
+          const category = this.helpMsgs[commandName]
+          for(const name in category){
+            const message = category[name]
+            found = message
+            this.output(this.formatHelpMessage(name, message))
+          }
+      }
+      
       for(const category in this.helpMsgs){
         if(this.helpMsgs[category][commandName]){
           found = this.helpMsgs[category][commandName]
@@ -165,6 +197,7 @@ class Terminal{
   }
 
   reboot(){
+    window.ipcRenderer.send("reboot",{ args:[], now:true })
     location.reload()
   }
 
@@ -181,9 +214,13 @@ class Terminal{
   output(data){
     if(typeof data == 'object'){
       data = JSON.stringify(data, null, 2)
+      this.output_.insertAdjacentHTML('beforeEnd', '<pre>' + data + '</pre>');
+      this.cmdLine_.focus();
+    }else{
+      this.output_.insertAdjacentHTML('beforeEnd', '<p>' + data + '</p>');
+      this.cmdLine_.focus();
     }
-    this.output_.insertAdjacentHTML('beforeEnd', '<p>' + data + '</p>');
-    this.cmdLine_.focus();
+    
   }
 
   clear(){
@@ -240,57 +277,110 @@ class Terminal{
 
   async runEditor(args){
     const path = args[0]
+    const currentDir = await this.exec("pwd")
     const file = await this.exec("getFile", [path])
     let content = ""
     if(file){
       content = file.content
     }
 
-    launchEditor(path, content, (file?"exists":false))
+    if(path){
+        path = currentDir+"/"+path
+    }
+
+    new Editor({ pathToFile:path, content:content })
+    return true
+  }
+  
+  async runMarkdownEditor(args){
+    const path = args[0]
+    const file = await this.exec("getFile", [path])
+    let content = ""
+    if(file){
+      content = file.content
+    }
+
+    new MarkdownEditor(path, content)
+    return true
+  }
+  
+  async runRichTextEditor(args){
+    const path = args[0]
+    const file = await this.exec("getFile", [path])
+    let content = ""
+    
+
+    const editor = new RichTextEditor(path, file.content)
     return true
   }
 
-  runExplorer(args){
-    //makeFileExplorer()
-    new FileExplorer(0,0)
-  }
-
-  async downloadFile(args){
-    const url = args[0]
-    window.ipcRenderer.send('will-download', url)
-    window.ipcRenderer.on('download-percentage', (event, message)=>{
-      const { percentage, remainingSize } = message
-      this.output(`${percentage}% -- Remaining Bytes: ${remainingSize}`)
-    })
-    window.ipcRenderer.once('download')
+  async runExplorer(args){
+    const current = await this.exec("pwd")
+    const path = args[0]
+    new FileExplorer({ workingDir:current+"/"+path })
   }
 
   startBrowser(args){
     const url = args[0]
-    launchBrowser(url)
+    new Browser(url)
+  }
+
+  async makeWifiCommand(args){
+    //list, scan, connect, disconnect
+    
+
+    const [ wifiCmd, ...wifiArgs ] = args
+
+    const splitArgumentsByApostrophe = (argsBySpace) =>{
+      let argString = argsBySpace.join(" ")
+      
+      let argsByApostrophe = []
+      if(argString.includes('"')) argsByApostrophe = argString.split('"')
+      
+      if(argString.includes("'")) argsByApostrophe = argString.split("'")
+      
+      argsByApostrophe = argsByApostrophe.filter(e => e != "")
+      argsByApostrophe = argsByApostrophe.map(e => e.trim())
+      
+      return argsByApostrophe
+    }
+
+    const parseArgument = (flag, args) =>{
+      console.log(args)
+      if(!args.includes(flag)){
+        return null
+      }
+      
+      const index = args.indexOf(flag)
+      if(index == -1){
+        return null
+      }
+
+      return args[index + 1]
+      
+    }
+
+    const newArgs = splitArgumentsByApostrophe(wifiArgs)
+
+    let ssid = parseArgument("--ssid", newArgs)
+    let password = parseArgument("--password", newArgs)
+    let iface = parseArgument("--iface", newArgs)
+
+    console.log("Split",ssid, password, iface)
+
+    this.output("Running Wifi Command "+wifiCmd)
+    this.output("Standy...")
+
+    const { result, error } = await runWifiCommand(wifiCmd, { ssid:ssid, password:password, iface:iface })
+    if(error) this.output(`Wifi Error: ${JSON.stringify(error)}`)
+    else {
+      this.output(result)
+    }
   }
 
   async testSomething(args){
-    const anchor = document.getElementById('page-anchor')
-    const win = new WinBox({
-      mount:anchor,
-    })
-
-    
-    const collapse = new CollapsibleBar({
-      startingPath:"/",
-      mountDOM:anchor
-    })
-    collapse.init()
-    // new Editor("/system/home/desktop/muppet")
-  }
-
-  runFileManager(){
-    const anchor = document.getElementById("filemanager")
-    const temp = anchor.insertAdjacentHTML('beforeEnd', `
-    <iframe src="./js-fileexplorer/demo.html"></iframe>
-    `)
-    new WinBox({ title: "Window Title", mount:temp });
+    // new BrowserTabs()
+     const menu = new WifiMenu()
   }
 
   async getWeather(){
@@ -301,6 +391,7 @@ class Terminal{
 
   whoami(){
     this.output(navigator.userAgent)
+    this.output("")
     this.output(`Username: ${getUsername()}`)
   }
 
@@ -533,7 +624,7 @@ class Terminal{
       const suggestions = await this.exec("autoCompletePath", [relativePath+partialTarget])
       console.log('Suggestions', suggestions)
       if(suggestions.length > 1){
-        this.output(suggestions.join(" "))
+        this.output(suggestions.join("<br>"))
       }else if(suggestions.length === 1){
 
         const contentOfTarget = await this.exec('ls', [relativePath+partialTarget])

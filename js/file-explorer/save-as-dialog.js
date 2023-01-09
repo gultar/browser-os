@@ -1,7 +1,16 @@
+let mountPoint = window.MOUNT_POINT
+
+window.saveDialogOpened = false
+
 class SaveAsDialog{
     constructor(opts={}){
-        this.width = opts.width || '70%'
-        this.height = opts.height || '60%'
+        
+        if(window.saveDialogOpened) return new Error('Already Opened')
+        
+        window.saveDialogOpened = true
+        
+        this.width = opts.width || '55%'
+        this.height = opts.height || '82%'
         this.dialogWindow = ""
         this.mode = opts.mode || "save"
         this.modal = opts.modal || true
@@ -14,13 +23,15 @@ class SaveAsDialog{
         this.dialogDOM = ""
         this.homePath = (
             window.username == 'root' ? 
-                mountPoint+"/public/userspaces/root/home/" 
+                getMountPoint()+"/public/userspaces/root/home/" 
                 : 
-                mountPoint+"/home/"
+                getMountPoint()+"/home/"
             )
         this.init()
         this.listener = ""
         this.opts = opts
+        
+        
     }
 
     async exec(cmd, args){
@@ -33,6 +44,9 @@ class SaveAsDialog{
         this.launchWindow()
         await this.refreshExplorer()
         this.makeExplorerMenu()
+        
+        
+        
         this.listener = window.addEventListener("message", (e)=>{
             this.handleExplorerMessage(e)
         }, true);
@@ -43,10 +57,10 @@ class SaveAsDialog{
         <link rel="stylesheet" href="./css/save-as-dialog.css">
         <div id="dialog-window-wrapper">
             <div id="dialog-window">
-                <span id="save-as-label">Save file to:</span>
+                <span id="save-as-label">${this.mode} file</span>
                 <div id="input-line">
-                    <input id="path-viewer-input" type="text" readonly value="/system/home/downloads" />
-                    <button onclick="" id="select-path">Select</button>
+                    <input id="path-viewer-input" type="text" value="/" />
+                    <button onclick="window.postMessage({ setDir:document.getElementById('path-viewer-input').value })" id="select-path">Select</button>
                 </div>
                 <div id="dialog-explorer-box">
 
@@ -64,16 +78,17 @@ class SaveAsDialog{
                     </select>
                 </div>
                 <div id="button-line">
-                    <button onclick="window.postMessage({ saveDialog:true })" id="save-as-button">
+                    <button onclick="window.postMessage({ saveDialog:${this.explorerId} })" id="save-as-button">
                         ${this.mode}
                     </button>
-                    <button onclick="window.postMessage({ cancelDialog:true })" id="cancel-button">
+                    <button onclick="window.postMessage({ cancelDialog:${this.explorerId} })" id="cancel-button">
                         Cancel
                     </button>
                 </div>
             </div>
         </div>
         `
+        //
 
 
     }
@@ -83,13 +98,15 @@ class SaveAsDialog{
         this.currentDirContents = []
         this.fullPaths = []
         this.workingDir = ""
+        window.saveDialogOpened = false
     }
 
     launchWindow(){
-        this.dialogWindow = createWindow({ 
+        this.dialogWindow = new ApplicationWindow({ 
             title: "File Explorer",
-            width:'71%',
-            height:'80%',
+            label:`explorer-${this.explorerId}`,
+            width:this.width,
+            height:this.height,
             modal:this.modal,
             html:this.dialogDOM,
             onclose:()=>{
@@ -129,21 +146,31 @@ class SaveAsDialog{
             const filenameInput = document.querySelector("#save-file-as")
             filenameInput.value = message.setDialogFilename
         }
+        
+        window.ipcRenderer.on("test", (event, message)=>{
+            console.log('IPC', event)
+            console.log('Message', message)
+        })
 
         
     }
 
     async cancel(){
         this.dialogWindow.close()
-        window.postMessage({ dialogCancel:true })
+        window.postMessage({ dialogCancel:{ id:this.explorerId } })
+        sendEvent("dialog-save", { cancelled:true, id:this.explorerId })
+        
+        window.removeEventListener("message", this.handleExplorerMessage)
     }
 
     async save(){
         const path = document.querySelector("#path-viewer-input").value
         const filename = document.querySelector("#save-file-as").value
 
-        window.postMessage({ dialogSave:{ path:path, filename:filename } })
+        window.postMessage({ dialogSave:{ path:path, filename:filename, id:this.explorerId } })
+        sendEvent("dialog-save", { saved:true, path:path, filename:filename, id:this.explorerId })
         this.dialogWindow.close()
+        window.removeEventListener("message", this.handleExplorerMessage)
     }
 
     async refreshExplorer(){
@@ -388,7 +415,7 @@ class SaveAsDialog{
             if(hasDirectory){
                 if(this.workingDir === "/" && targetDir === "..")
                     this.workingDir = "/"
-                else if(this.workingDir == mountPoint+"/..")
+                else if(this.workingDir == getMountPoint()+"/..")
                     this.workingDir = "/"
                 else if(this.workingDir !== "/" && targetDir === "..")
                     targetDir = targetDir + "/"   

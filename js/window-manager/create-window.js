@@ -1,24 +1,66 @@
 window.openWindows = {}
-window.launchSequence = []
+window.launchSequence = {}
 
-const createWindow = (opts) =>{
-    const newWindow = new WinBox(opts)
-    const name = opts.label || opts.title
-    newWindow.launcher = opts.launcher
-    window.openWindows[name] = newWindow
-    newWindow.onclose = ()=>{
-        delete window.openWindows[name]
+const storage = new Storage({})
+
+class ApplicationWindow extends WinBox{
+    constructor(opts){
+        if(!opts.width) opts.width = "500"
+        if(!opts.height) opts.height = "350"
+        super(opts)
+        
+        this.name = opts.label || opts.title
+        this.launcher = opts.launcher || {}
+
+        saveState(this)
+
+        this.onclose = (callback=()=>{}) =>{
+            delete window.openWindows[this.name]
+            delete window.launchSequence[this.name]
+            if(opts.onclose) opts.onclose(callback)
+        }
+        
+        this.onmove = (x, y) =>{
+            if(this.launcher && this.launcher.opts){
+                this.launcher.opts.x = x
+                this.launcher.opts.y = y
+                
+                saveState(this)
+            }
+        }
+        window.openWindows[this.name] = this
+
     }
-
-    return newWindow
+    
+    destroy(callback){
+        delete window.openWindows[this.name]
+    }
 }
+
+const saveState = (winbox) =>{
+    window.launchSequence[winbox.name] = {
+        launcher:{
+            name:winbox.launcher.name,
+            opts:winbox.launcher.opts
+        }
+    }
+}
+
 
 const minimizeAllWindows = (force=false) =>{
     for(const windowName in window.openWindows){
         const instance = window.openWindows[windowName]
-        
         const state = (force?true:!instance.min)
-        instance.minimize(state)
+        if(instance && instance.minimize) 
+            instance.minimize(state)
+    }
+}
+
+const restoreAllWindows = () =>{
+    for(const windowName in window.openWindows){
+        const instance = window.openWindows[windowName]
+        if(instance) 
+            instance.restore(true)
     }
 }
 
@@ -27,26 +69,58 @@ const revertWindowStates = () =>{
 }
 
 const saveWindowState = () =>{
-    for(const windowName in window.openWindows){
-        const instance = window.openWindows[windowName]
-        window.launchSequence.push(instance.launcher)
+    window.launchSequence = {}
+    for(const windowLabel in window.openWindows){
+        const instance = window.openWindows[windowLabel]
+        saveState(instance)
     }
 
-    localStorage.setItem("launchSequence", JSON.stringify(window.launchSequence))
+    storage.set("launch-sequence", window.launchSequence)
 }
 
-const loadWindowState = () =>{
-    const launchSequenceString = localStorage.getItem("launchSequence")
-    const launchSequence = JSON.parse(launchSequenceString)
+
+const loadWindowState = async () =>{
+    const launchSequence = storage.get("launch-sequence")
     console.log('launchSequence', launchSequence)
-    for(const launcher of launchSequence){
-        //
-        console.log('launcher.name', window[launcher.name])
-        console.log('launcher.params', ...launcher.params)
-        window[launcher.name](...launcher.params)
+    for(const windowLabel in launchSequence){
+        try{
+            const windowState = launchSequence[windowLabel]
+            console.log('Window state', windowState)
+            const { launcher, x, y } = windowState
+            const { params, opts } = launcher
+            
+            const App = window[launcher.name]
+            
+            new App({ x:x, y:y, ...opts })
+
+        }catch(e){
+            console.log('Window Launcher Error', e)
+        }
         
     }
 
-    window.launchSequence = []
+}
+
+const cycleThroughWindows = () =>{
+    let position = 0
+    let windowNames = []
+    $(window).keydown(function(event) {
+        if (event.ctrlKey && event.which == 9) { //CTRL + Tab
+            windowNames = Object.keys(window.openWindows)
+            console.log(Object.keys(window.openWindows))
+            minimizeAllWindows("force")
+            if(windowNames.length > 0){
+                
+                const windowName = windowNames[position]
+                const openWindow = window.openWindows[windowName]
+                
+                if(openWindow) openWindow.minimize(false)
+                position++
+                if(position >= windowNames.length) position = 0
+                
+                
+            }
+        }
+    });
 }
 
