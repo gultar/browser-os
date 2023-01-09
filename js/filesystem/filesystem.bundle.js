@@ -927,6 +927,7 @@ let persistanceInterface = {
     },
     cd:()=>{},
     resolvePath:(path)=>{
+        if(!path || path == null) return path
         return path.replace("//","/")
     },
     getFile:(path)=>{
