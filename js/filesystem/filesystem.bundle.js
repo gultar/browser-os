@@ -870,6 +870,8 @@ window.saveState = saveState
 const resolvePath = (path) => {
     if(!path || path == null) return path
 
+    path = "/" + path
+
     return path.replace("//","/")
 }
 
