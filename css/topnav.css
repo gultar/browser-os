@@ -2,7 +2,7 @@
 @import url(https://fonts.googleapis.com/css?family=Bree+Serif);
 @import url("./variables.css");
 
-.clock-container{
+.settings-container{
 	display:inline-block;
 	margin-right: 0;
 	margin-left: auto;
@@ -11,9 +11,33 @@
 	font-size: var(--nav-font-size);
 }
 
+#clock{
+    display:inline-block;
+    width:50px;
+}
+
 .nav-item-group{
 	display:flex;
 }
+
+.battery{
+    display:inline-block;
+    margin-right:10px;
+    cursor:pointer;
+}
+
+
+#battery-icon{
+    display:inline-block;
+}
+
+#battery-percentage{
+    font-size:6pt;
+}
+
+/*#battery-widget-container{*/
+/*    width:70px;*/
+/*}*/
 
 nav {
 	background-color: var(--nav-background-color);
@@ -61,16 +85,15 @@ nav a:hover {
 	color:var(--nav-background-color);
 }
 
-.wifi-icon:hover { 
+.settings-icon:hover { 
 	background-color: var(--hover-color); 
 	color:var(--nav-background-color);
 	cursor:pointer;
-
+    border-radius:2px;
 }
 
-.wifi-icon{
-    width:12px;
-	height:12px;
+.settings-icon{
+	margin-right:10px;
 }
 
 /* Hide Dropdowns by Default */

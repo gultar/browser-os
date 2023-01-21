@@ -2,8 +2,9 @@
     /*Desktop Styling
     linear-gradient(-60deg, #2c4f99, #365afc, #414141, #575757);
     */
-    --size-of-desktop-icons:50px;
-    --size-of-desktop-icon-slot:85px;
+    --width-of-desktop-icons:35px;
+    --height-of-desktop-icons:45px;
+    --size-of-desktop-icon-slot:70px;
     --default-font:Inconsolata, monospace;
     --first-gradient:#2c4f99;
     --second-gradient:#365afc;
@@ -18,7 +19,7 @@
     /*Basic Window Styling*/
     --window-height: 300px;
     --window-width: 500px;
-    --window-tint: 0.7;
+    --window-tint: 0.8;
     --background:#45505f;
     --context-menu-background:#232527;
     --explorer-background:rgb(57, 64, 71);
@@ -31,7 +32,7 @@
     --height:30px;
 	--height-minus:-30px;
 	--width:170px;
-	--hover-color:#57ff0a;
+	--hover-color:rgba(87,255,10);
 	--nav-background-color:rgb(20, 20, 20);
 	--nav-background-color2:#232527;
 	--nav-font-color:#ffffff;

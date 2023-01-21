@@ -24,7 +24,7 @@ function runTirex(){
 }
 
 function runLofi(){
-    if(window.isElectron) launchBrowser('https://www.youtube.com/watch?v=jfKfPfyJRdk&ab_channel=LofiGirl')
+    if(window.isElectron) new Browser('https://www.youtube.com/watch?v=jfKfPfyJRdk&ab_channel=LofiGirl')
     else{
         const lofi = `<iframe width="560" height="315" src="https://www.youtube.com/embed/jfKfPfyJRdk"
         title="YouTube video player" frameborder="0" 

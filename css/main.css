@@ -33,6 +33,8 @@ body{
   height:100%;
   width:100%;
   position: relative;
+  background:url("../images/sunset.png");
+  background-size:cover;
 }
 
 .mouse-halo::after {
@@ -129,14 +131,14 @@ body{
   background-color: transparent;
   position:fixed;
   text-align: center;
-  font-size:9pt !important;
+  font-size:8pt !important;
   flex-wrap: wrap;
 }
 
 
 .desktop-icon{
-  height:var(--size-of-desktop-icons);
-  width:var(--size-of-desktop-icons);
+  height:var(--height-of-desktop-icons);
+  width:var(--width-of-desktop-icons);
   text-align: center;
 }
 
@@ -147,10 +149,11 @@ body{
 .desktop-icon-link{
   display:flex;
   flex-direction:column;
+  padding:5px;
 }
 
 .desktop-icon-link span{
-    
+    margin-top:0;
 }
 
 .placeholder{
@@ -158,6 +161,19 @@ body{
 }
 
 .selected{
+}
+
+#volume-menu{
+
+}
+#volume-slider{
+  /* width:200px;
+  height:30px;
+  background-color: var(--nav-background-color);
+  position:fixed;
+  display:block;
+  top:30px;
+  right:0; */
 }
 
 @keyframes gradient {

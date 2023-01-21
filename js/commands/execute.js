@@ -64,18 +64,7 @@ const runFileSystemCommand = (cmd, args=[]) =>{
   }
 }
 
-// const runFSCommand = (cmd, args=[]) =>{
-//   try{
-//     const commandResult = window.FileSystem[cmd](...args)
-//     return commandResult
-//   }catch(e){
-//     console.log(e)
-//     return { error:e.message }
-//   }
-// }
-
 const runWifiCommand = async (wifiCmd, params)=>{
-  console.log('Params', params)
   const { ssid, password, iface } = params
   try{
     const response = await Promise.resolve($.post("http://localhost:8000/wifi", {
@@ -85,9 +74,6 @@ const runWifiCommand = async (wifiCmd, params)=>{
           iface:iface
     }));
 
-    console.log("RUN", {          ssid:ssid,
-      password:password,
-      iface:iface})
     const { error, success } = response
     
     if(error) return { error:error }
