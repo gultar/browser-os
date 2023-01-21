@@ -1,4 +1,5 @@
 const getMountPoint = () =>{
+    if(window.MOUNT_POINT == undefined) return ""
     return (window.MOUNT_POINT === "." ? "" : window.MOUNT_POINT)
 }
 
