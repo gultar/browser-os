@@ -18,6 +18,9 @@ body{
   overflow: hidden;
   background:url("../images/sunset.png");
   background-size:cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
 }
   /*okay*/
 .background {
@@ -188,13 +191,17 @@ body{
     background-position: 0% 50%;
   }
 }
+@media only screen and (max-width: 1300px){
 
+}
 
 @media only screen and (max-width: 1000px){
   #logo-container{
     left:40%;
   }
+
 }
+
 
 @media only screen and (min-width : 480px) and (max-width: 560px){
   #logo-container{
