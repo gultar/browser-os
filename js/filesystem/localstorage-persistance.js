@@ -1,6 +1,6 @@
 
 const resolvePath = (path) => {
-    return path.replace("//","/")
+    return path.replace(/\/\//g,"/")//replace("//","/")
 }
 
 let persistanceInterface = {

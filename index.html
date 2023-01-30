@@ -229,7 +229,39 @@
         </div>
         
     </div>
-    
+    <div style="text-align:center;padding:20px" id="demo-message-container">
+        <h2>Welcome to the Demo!</h2>
+        <p style="font-size:10pt" class="demo-message">
+            This is a visual demo of the Tundra OS desktop environment.
+            It is meant to show the various functionalities and tools available
+            in the Electron JS version of the application.
+            <br><br>
+            In fact, certain functionalities are restricted, since, without Electron, 
+            some components are not available or do not work as intented.
+            Nonetheless, it is meant to be a full-fledged demo for you to play around with.
+            <br><br>
+            Have fun exploring!
+        </p>
+        <label for="message-disable">Don't show again.</label>
+        <input type="checkbox" name="message-disable" id="disable-message">
+
+    </div>
+    <script>
+        
+        const isDemoMessageDisabled = sessionStorage.getItem('demo-msg-disabled')
+        console.log('isDemoMessageDisabled',isDemoMessageDisabled)
+        if(!isDemoMessageDisabled){
+            window.demoMessage = new WinBox({
+                modal:true,
+                mount:document.querySelector("#demo-message-container")
+            })
+
+            $('#disable-message').change(()=>{
+                sessionStorage.setItem('demo-msg-disabled', 'message disabled' )
+                console.log('Message is disabled')
+            })
+        }
+    </script>
 </body>
 </html>
 
